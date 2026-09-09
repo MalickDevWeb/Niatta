@@ -1,0 +1,12 @@
+<div 
+  (click)="cardClick.emit(id)" 
+  class="h-full bg-white rounded-[28px] p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-between gap-2 active:scale-95 transition-transform cursor-pointer">
+  <iconify-icon [icon]="icon" class="text-[60px] leading-none mb-1 drop-shadow-md shrink-0"></iconify-icon>
+  <h3 class="font-black text-[18px] text-gray-900 text-center leading-tight flex-1 flex flex-col justify-center w-full">
+    <span>{{ name }}</span>
+    <span class="text-[12px] text-gray-400 font-bold mt-1">{{ unit }}</span>
+  </h3>
+  <div class="bg-[#f2fbf5] text-[#00a859] px-4 py-1.5 rounded-full font-black text-[16px] mt-1 border border-[#cbebd6] shrink-0">
+    {{ price }} FCFA
+  </div>
+</div>
