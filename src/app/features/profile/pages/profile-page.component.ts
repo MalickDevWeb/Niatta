@@ -13,49 +13,39 @@ import Swal from 'sweetalert2';
     <div class="min-h-screen bg-gray-50 pb-24 font-sans animate-fade-in">
       
       <!-- NOT LOGGED IN STATE -->
-      <div *ngIf="!authService.currentUser()" class="px-5 pt-16 flex flex-col items-center justify-center min-h-[80vh]">
+      <div *ngIf="!authService.currentUser()" class="px-5 pt-12 flex flex-col items-center justify-center min-h-[85vh]">
         
-        <div class="w-20 h-20 bg-gradient-to-br from-[#00a859] to-[#008f4c] rounded-full flex items-center justify-center shadow-lg mb-6">
-          <span class="text-[40px] text-white">🔒</span>
-        </div>
-        
-        <h1 class="text-[28px] font-black text-gray-900 text-center leading-tight mb-2">
-          {{ isLoginMode() ? 'Bon retour !' : 'Rejoignez-nous' }}
+        <h1 class="text-[36px] font-black text-gray-900 text-center leading-tight tracking-tight mb-8">
+          {{ isLoginMode() ? 'Connexion' : 'Inscription' }}
         </h1>
-        <p class="text-[15px] font-medium text-gray-500 text-center mb-8 px-4">
-          {{ isLoginMode() ? 'Connectez-vous pour suivre vos signalements et cumuler des points.' : 'Créez un compte pour commencer à signaler les abus de prix.' }}
-        </p>
 
-        <div class="w-full bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100">
+        <div class="w-full flex flex-col gap-4">
           
-          <div *ngIf="!isLoginMode()" class="mb-5">
-            <label class="block text-[14px] font-bold text-gray-700 mb-2 ml-1">Nom complet</label>
-            <input type="text" [(ngModel)]="name" placeholder="Ex: Modou Fall" 
-                   class="w-full bg-gray-50 border-none rounded-[20px] px-5 py-4 text-[16px] font-medium text-gray-900 focus:ring-2 focus:ring-[#00a859] outline-none transition-all">
+          <div class="w-full h-[64px] rounded-[24px] bg-white border-[3px] border-gray-100 flex items-center px-5 focus-within:border-[#00a859] transition-colors shadow-sm">
+            <input type="tel" [(ngModel)]="phone" placeholder="Numéro de téléphone" 
+                   class="w-full h-full bg-transparent outline-none text-[18px] font-black text-gray-900 placeholder-gray-300">
           </div>
 
-          <div class="mb-5">
-            <label class="block text-[14px] font-bold text-gray-700 mb-2 ml-1">Numéro de téléphone</label>
-            <input type="tel" [(ngModel)]="phone" placeholder="Ex: 77 123 45 67" 
-                   class="w-full bg-gray-50 border-none rounded-[20px] px-5 py-4 text-[16px] font-medium text-gray-900 focus:ring-2 focus:ring-[#00a859] outline-none transition-all">
+          <div class="w-full h-[64px] rounded-[24px] bg-white border-[3px] border-gray-100 flex items-center px-5 focus-within:border-[#00a859] transition-colors shadow-sm">
+            <input type="password" [(ngModel)]="password" placeholder="Mot de passe" 
+                   class="w-full h-full bg-transparent outline-none text-[18px] font-black text-gray-900 placeholder-gray-300">
           </div>
-
-          <div class="mb-6">
-            <label class="block text-[14px] font-bold text-gray-700 mb-2 ml-1">Mot de passe</label>
-            <input type="password" [(ngModel)]="password" placeholder="••••••••" 
-                   class="w-full bg-gray-50 border-none rounded-[20px] px-5 py-4 text-[16px] font-medium text-gray-900 focus:ring-2 focus:ring-[#00a859] outline-none transition-all">
+          
+          <div *ngIf="!isLoginMode()" class="w-full h-[64px] rounded-[24px] bg-white border-[3px] border-gray-100 flex items-center px-5 focus-within:border-[#00a859] transition-colors shadow-sm">
+            <input type="password" [(ngModel)]="confirmPassword" placeholder="Confirmer mot de passe" 
+                   class="w-full h-full bg-transparent outline-none text-[18px] font-black text-gray-900 placeholder-gray-300">
           </div>
 
           <button (click)="submit()" [disabled]="isLoading()" 
-                  class="w-full bg-gray-900 text-white rounded-[20px] py-4 text-[16px] font-black shadow-lg active:scale-95 transition-transform disabled:opacity-70 flex items-center justify-center gap-2">
-            <span *ngIf="isLoading()" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            {{ isLoginMode() ? 'Se connecter' : 'Créer mon compte' }}
+                  class="w-full mt-2 bg-gray-900 text-white rounded-[24px] h-[64px] text-[20px] font-black shadow-lg active:scale-95 transition-transform disabled:opacity-70 flex items-center justify-center gap-2">
+            <span *ngIf="isLoading()" class="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></span>
+            {{ isLoginMode() ? 'Valider' : 'Créer le compte' }}
           </button>
           
         </div>
 
-        <button (click)="isLoginMode.set(!isLoginMode())" class="mt-8 text-[15px] font-bold text-gray-500 active:text-gray-900 transition-colors">
-          {{ isLoginMode() ? 'Pas encore de compte ? S\\'inscrire' : 'Déjà un compte ? Se connecter' }}
+        <button (click)="isLoginMode.set(!isLoginMode())" class="mt-8 text-[16px] font-black text-gray-400 active:text-gray-900 transition-colors tracking-tight">
+          {{ isLoginMode() ? 'Je n\\'ai pas de compte' : 'J\\'ai déjà un compte' }}
         </button>
       </div>
 
@@ -124,13 +114,18 @@ export class ProfilePageComponent {
   isLoginMode = signal(true);
   isLoading = signal(false);
 
-  name = '';
   phone = '';
   password = '';
+  confirmPassword = '';
 
   submit() {
-    if (!this.phone || !this.password || (!this.isLoginMode() && !this.name)) {
+    if (!this.phone || !this.password || (!this.isLoginMode() && !this.confirmPassword)) {
       this.showError('Veuillez remplir tous les champs.');
+      return;
+    }
+
+    if (!this.isLoginMode() && this.password !== this.confirmPassword) {
+      this.showError('Les mots de passe ne correspondent pas.');
       return;
     }
 
@@ -145,7 +140,7 @@ export class ProfilePageComponent {
         }
       });
     } else {
-      this.authService.register(this.name, this.phone, this.password).subscribe({
+      this.authService.register('Utilisateur', this.phone, this.password).subscribe({
         next: () => this.isLoading.set(false),
         error: (err) => {
           this.isLoading.set(false);
