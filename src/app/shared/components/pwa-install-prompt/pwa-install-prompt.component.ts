@@ -13,7 +13,7 @@ import { PwaInstallService } from '../../../core/services/pwa-install.service';
       <div class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm pointer-events-auto transition-opacity animate-fade-in" (click)="pwaService.dismissPrompt()"></div>
       
       <!-- Modal / Bottom Sheet -->
-      <div class="relative w-full max-w-sm bg-white rounded-[32px] p-6 shadow-2xl pointer-events-auto transform transition-all animate-slide-up border-[4px] border-white ring-1 ring-gray-100">
+      <div class="relative w-full max-w-sm bg-white rounded-[32px] p-6 shadow-2xl pointer-events-auto transform transition-all animate-sheet-enter border-[4px] border-white ring-1 ring-gray-100">
         
         <!-- Close button -->
         <button (click)="pwaService.dismissPrompt()" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors active:scale-95">
@@ -52,15 +52,6 @@ import { PwaInstallService } from '../../../core/services/pwa-install.service';
 
       </div>
     </div>
-    <style>
-      @keyframes slide-up {
-        from { transform: translateY(100%); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-      }
-      .animate-slide-up {
-        animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-    </style>
   `
 })
 export class PwaInstallPromptComponent {

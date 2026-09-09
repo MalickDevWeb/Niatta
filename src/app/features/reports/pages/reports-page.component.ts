@@ -18,6 +18,25 @@ import Swal from 'sweetalert2';
   standalone: true,
   imports: [CommonModule, FormsModule, BottomNavComponent, LiveCameraComponent, SearchBarComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  styles: [`
+    @keyframes smoothAppear {
+      from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .animate-smooth-appear {
+      animation: smoothAppear 400ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      transform-origin: top;
+    }
+    @keyframes bounce-success {
+      0% { transform: scale(0.95); opacity: 0; }
+      50% { transform: scale(1.03); opacity: 1; }
+      70% { transform: scale(0.98); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-bounce-success {
+      animation: bounce-success 500ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    }
+  `],
   template: `
     <div class="min-h-screen bg-white pb-36 font-sans animate-fade-in relative overflow-x-hidden">
       <!-- Decorative Header Background -->
@@ -100,7 +119,7 @@ import Swal from 'sweetalert2';
               <div class="flex items-center justify-center mr-3 shrink-0">
                 <iconify-icon icon="fluent-emoji:money-bag" class="text-[32px] drop-shadow-sm"></iconify-icon>
               </div>
-              <input class="w-full outline-none text-[22px] text-gray-900 font-black bg-transparent placeholder-gray-300" type="number" placeholder="0" (input)="onPriceChange($event)" />
+              <input class="w-full outline-none text-[22px] text-gray-900 font-black bg-transparent placeholder-gray-300" type="number" min="0" placeholder="0" (input)="onPriceChange($event)" (keydown)="preventNegative($event)" />
               <div class="bg-gray-100 px-4 py-2 rounded-xl">
                 <span class="text-[14px] font-black text-gray-500">FCFA</span>
               </div>
@@ -169,7 +188,7 @@ import Swal from 'sweetalert2';
             </ng-container>
 
             <!-- Camera Component -->
-            <div *ngIf="isCameraActive()" class="mt-2 animate-fade-in relative z-20">
+            <div *ngIf="isCameraActive()" class="mt-2 animate-smooth-appear relative z-20">
               <div class="flex justify-between items-center mb-2 px-1">
                 <span class="text-[13px] font-black text-[#00a859] bg-[#e6f7ed] px-3 py-1 rounded-full"><span class="animate-pulse mr-1">🔴</span>Enregistrement...</span>
                 <button (click)="isCameraActive.set(false)" class="text-[13px] font-black text-gray-500 bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200">Annuler</button>
@@ -298,7 +317,18 @@ export class ReportsPageComponent {
   }
   
   onPriceChange(event: any) {
-    this.price.set(event.target.value);
+    let val = parseFloat(event.target.value);
+    if (val < 0) {
+      val = Math.abs(val);
+      event.target.value = val;
+    }
+    this.price.set(val);
+  }
+
+  preventNegative(event: KeyboardEvent) {
+    if (['-', '+', 'e', 'E'].includes(event.key)) {
+      event.preventDefault();
+    }
   }
 
   submitObservation() {
@@ -309,10 +339,10 @@ export class ReportsPageComponent {
         icon: 'warning',
         confirmButtonText: 'D\'accord',
         customClass: {
-          popup: 'rounded-[32px] shadow-2xl p-4 border-none',
+          popup: 'rounded-[32px] shadow-2xl p-6 border-none',
           title: 'text-[20px] font-black text-gray-800 mt-2',
           htmlContainer: 'text-[15px] text-gray-500 font-medium',
-          actions: 'w-full mt-4 px-2',
+          actions: 'w-full mt-6 px-2',
           confirmButton: 'w-full bg-gray-900 text-white rounded-[20px] min-h-[56px] flex items-center justify-center font-black text-[16px] shadow-lg active:scale-95 transition-transform'
         },
         buttonsStyling: false,
@@ -329,10 +359,10 @@ export class ReportsPageComponent {
         icon: 'error',
         confirmButtonText: 'Corriger',
         customClass: {
-          popup: 'rounded-[32px] shadow-2xl p-4 border-none',
+          popup: 'rounded-[32px] shadow-2xl p-6 border-none',
           title: 'text-[20px] font-black text-gray-800 mt-2',
           htmlContainer: 'text-[15px] text-gray-500 font-medium',
-          actions: 'w-full mt-4 px-2',
+          actions: 'w-full mt-6 px-2',
           confirmButton: 'w-full bg-[#ff0033] text-white rounded-[20px] min-h-[56px] flex items-center justify-center font-black text-[16px] shadow-[0_8px_20px_-6px_rgba(255,0,51,0.5)] active:scale-95 transition-transform'
         },
         buttonsStyling: false,
@@ -354,20 +384,86 @@ export class ReportsPageComponent {
     Swal.fire({
       title: 'Qui êtes-vous ?',
       html: `
-        <p class="text-[14px] text-gray-500 font-medium mb-5">Créez un compte rapide pour valider votre alerte.</p>
-        <div class="flex flex-col gap-4 px-1">
-          <input type="text" id="swal-name" placeholder="Votre nom complet" class="w-full bg-gray-50 border-none rounded-[20px] px-5 py-4 text-[16px] font-medium text-gray-900 focus:ring-2 focus:ring-[#00a859] outline-none transition-all" style="margin: 0; box-sizing: border-box;">
-          <input type="tel" id="swal-phone" placeholder="Numéro de téléphone" class="w-full bg-gray-50 border-none rounded-[20px] px-5 py-4 text-[16px] font-medium text-gray-900 focus:ring-2 focus:ring-[#00a859] outline-none transition-all" style="margin: 0; box-sizing: border-box;">
-          <input type="password" id="swal-password" placeholder="Mot de passe" class="w-full bg-gray-50 border-none rounded-[20px] px-5 py-4 text-[16px] font-medium text-gray-900 focus:ring-2 focus:ring-[#00a859] outline-none transition-all" style="margin: 0; box-sizing: border-box;">
+        <p class="text-[14px] text-gray-500 font-medium mb-6">Créez un compte rapide pour valider votre alerte.</p>
+        <div class="flex flex-col gap-4 px-1 text-left">
+          
+          <!-- Name Field Premium -->
+          <div class="relative flex items-center w-full h-[76px] rounded-[24px] bg-[#f8fafc] border-[1.5px] border-[#e2e8f0] px-5 focus-within:bg-white focus-within:border-[#00a859] focus-within:shadow-[0_8px_30px_rgba(0,168,89,0.12)] transition-all duration-300" style="margin:0; box-sizing:border-box;">
+            <div class="w-11 h-11 rounded-[14px] bg-white shadow-sm flex items-center justify-center mr-4 text-gray-400 transition-colors shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+              </svg>
+            </div>
+            <div class="flex flex-col justify-center w-full mt-0.5">
+              <label class="text-[11px] font-extrabold text-gray-400 mb-0.5 uppercase tracking-wider block">Votre nom</label>
+              <input type="text" id="swal-name" placeholder="Nom complet" 
+                     class="w-full bg-transparent border-none outline-none text-[17px] font-black text-gray-800 placeholder-gray-300 p-0 focus:ring-0">
+            </div>
+          </div>
+
+          <!-- Phone Field Premium -->
+          <div class="relative flex items-center w-full h-[76px] rounded-[24px] bg-[#f8fafc] border-[1.5px] border-[#e2e8f0] px-5 focus-within:bg-white focus-within:border-[#00a859] focus-within:shadow-[0_8px_30px_rgba(0,168,89,0.12)] transition-all duration-300" style="margin:0; box-sizing:border-box;">
+            <div class="w-11 h-11 rounded-[14px] bg-white shadow-sm flex items-center justify-center mr-4 text-gray-400 transition-colors shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.896-1.596-5.54-4.24-7.136-7.136l1.292-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+              </svg>
+            </div>
+            <div class="flex flex-col justify-center w-full mt-0.5">
+              <label class="text-[11px] font-extrabold text-gray-400 mb-0.5 uppercase tracking-wider block">Téléphone</label>
+              <input type="tel" id="swal-phone" placeholder="77 000 00 00" 
+                     class="w-full bg-transparent border-none outline-none text-[17px] font-black text-gray-800 placeholder-gray-300 p-0 focus:ring-0">
+            </div>
+          </div>
+
+          <!-- Password Field Premium -->
+          <div class="relative flex items-center w-full h-[76px] rounded-[24px] bg-[#f8fafc] border-[1.5px] border-[#e2e8f0] px-5 focus-within:bg-white focus-within:border-[#00a859] focus-within:shadow-[0_8px_30px_rgba(0,168,89,0.12)] transition-all duration-300" style="margin:0; box-sizing:border-box;">
+            <div class="w-11 h-11 rounded-[14px] bg-white shadow-sm flex items-center justify-center mr-4 text-gray-400 transition-colors shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+              </svg>
+            </div>
+            <div class="flex flex-col justify-center w-full mt-0.5">
+              <label class="text-[11px] font-extrabold text-gray-400 mb-0.5 uppercase tracking-wider block">Mot de passe</label>
+              <input type="password" id="swal-password" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*"
+                     class="w-full bg-transparent border-none outline-none text-[17px] font-black text-gray-800 placeholder-gray-300 p-0 focus:ring-0">
+            </div>
+            <button type="button" onclick="const p = document.getElementById('swal-password'); p.type = p.type === 'password' ? 'text' : 'password';" class="text-gray-400 hover:text-[#00a859] transition-colors ml-2 p-2 shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Confirm Password Field Premium -->
+          <div class="relative flex items-center w-full h-[76px] rounded-[24px] bg-[#f8fafc] border-[1.5px] border-[#e2e8f0] px-5 focus-within:bg-white focus-within:border-[#00a859] focus-within:shadow-[0_8px_30px_rgba(0,168,89,0.12)] transition-all duration-300" style="margin:0; box-sizing:border-box;">
+            <div class="w-11 h-11 rounded-[14px] bg-white shadow-sm flex items-center justify-center mr-4 text-gray-400 transition-colors shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+              </svg>
+            </div>
+            <div class="flex flex-col justify-center w-full mt-0.5">
+              <label class="text-[11px] font-extrabold text-gray-400 mb-0.5 uppercase tracking-wider block">Confirmer mot de passe</label>
+              <input type="password" id="swal-confirm-password" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*"
+                     class="w-full bg-transparent border-none outline-none text-[17px] font-black text-gray-800 placeholder-gray-300 p-0 focus:ring-0">
+            </div>
+            <button type="button" onclick="const p = document.getElementById('swal-confirm-password'); p.type = p.type === 'password' ? 'text' : 'password';" class="text-gray-400 hover:text-[#00a859] transition-colors ml-2 p-2 shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              </svg>
+            </button>
+          </div>
         </div>
       `,
       confirmButtonText: 'Créer et envoyer',
       showCancelButton: true,
       cancelButtonText: 'Annuler',
+      backdrop: 'rgba(0,0,0,0.6)',
       customClass: {
-        popup: 'rounded-[32px] shadow-2xl p-4 border-none',
+        popup: 'rounded-[32px] shadow-2xl p-6 border-none',
         title: 'text-[22px] font-black text-gray-900 mt-2',
-        actions: 'w-full mt-4 px-2 flex-col gap-2',
+        actions: 'w-full mt-6 px-2 flex-col gap-2',
         confirmButton: 'w-full m-0 bg-[#00a859] text-white rounded-[20px] min-h-[56px] flex items-center justify-center font-black text-[16px] shadow-[0_8px_20px_-6px_rgba(0,168,89,0.5)] active:scale-95 transition-transform',
         cancelButton: 'w-full m-0 bg-gray-100 text-gray-700 rounded-[20px] min-h-[56px] flex items-center justify-center font-bold text-[16px] mt-2 active:scale-95 transition-transform'
       },
@@ -376,11 +472,18 @@ export class ReportsPageComponent {
         const name = (document.getElementById('swal-name') as HTMLInputElement).value;
         const phone = (document.getElementById('swal-phone') as HTMLInputElement).value;
         const password = (document.getElementById('swal-password') as HTMLInputElement).value;
+        const confirmPassword = (document.getElementById('swal-confirm-password') as HTMLInputElement).value;
         
-        if (!name || !phone || !password) {
+        if (!name || !phone || !password || !confirmPassword) {
           Swal.showValidationMessage('Veuillez remplir tous les champs');
           return false;
         }
+        
+        if (password !== confirmPassword) {
+          Swal.showValidationMessage('Les mots de passe ne correspondent pas');
+          return false;
+        }
+        
         return { name, phone, password };
       }
     }).then((result) => {
@@ -428,7 +531,7 @@ export class ReportsPageComponent {
           icon: 'success',
           confirmButtonText: 'Génial !',
           customClass: {
-            popup: 'rounded-[32px] shadow-2xl p-4 border-none',
+            popup: 'rounded-[32px] shadow-2xl p-4 border-none animate-bounce-success',
             title: 'text-[20px] font-black text-gray-800 mt-2',
             htmlContainer: 'text-[15px] text-gray-500 font-medium',
             actions: 'w-full mt-4 px-2',
@@ -437,7 +540,7 @@ export class ReportsPageComponent {
           buttonsStyling: false,
           backdrop: 'rgba(0,0,0,0.5) blur(4px)'
         }).then(() => {
-          this.router.navigate(['/']);
+          this.router.navigate(['/home']);
         });
       },
       error: (err) => {

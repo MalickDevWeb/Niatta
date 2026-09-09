@@ -1,7 +1,9 @@
 {
-  "name": "frontend-angular",
-  "short_name": "frontend-angular",
+  "name": "Juste Prix Sénégal",
+  "short_name": "Juste Prix",
   "display": "standalone",
+  "theme_color": "#00a859",
+  "background_color": "#f8fafc",
   "scope": "./",
   "start_url": "./",
   "icons": [

@@ -66,9 +66,9 @@ export class PwaInstallService {
     const { outcome } = await this.deferredPrompt.userChoice;
     
     if (outcome === 'accepted') {
-      console.log('L\\'utilisateur a accepté l\\'installation PWA');
+      console.log("L'utilisateur a accepté l'installation PWA");
     } else {
-      console.log('L\\'utilisateur a refusé l\\'installation PWA');
+      console.log("L'utilisateur a refusé l'installation PWA");
     }
     
     this.deferredPrompt = null;
