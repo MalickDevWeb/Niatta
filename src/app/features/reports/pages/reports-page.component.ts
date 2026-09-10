@@ -165,7 +165,7 @@ import Swal from 'sweetalert2';
           </div>
 
           <!-- Section 4: Photo de la boutique -->
-          <div>
+          <div *ngIf="!selectedStoreId()">
             <div class="flex items-center gap-3 mb-3">
               <div class="w-7 h-7 rounded-full bg-[#00a859] text-white flex items-center justify-center font-black text-[14px] shadow-sm">4</div>
               <h2 class="text-[17px] font-black text-[#0f172a]">Photo de la boutique (Si possible)</h2>
@@ -334,32 +334,12 @@ export class ReportsPageComponent {
     this.selectedStoreId.set(storeId);
     this.hasDisambiguated.set(true);
     this.isDisambiguationVisible.set(false);
-    this.submitObservation();
   }
 
   createNewStore() {
     this.selectedStoreId.set(null);
     this.hasDisambiguated.set(true);
     this.isDisambiguationVisible.set(false);
-    
-    if (!this.cameraService.capturedImage()) {
-      import('sweetalert2').then(m => m.default).then(Swal => {
-        Swal.fire({
-          title: 'Photo requise',
-          text: 'Pour signaler une nouvelle boutique, vous devez prendre une photo de sa devanture.',
-          icon: 'warning',
-          confirmButtonText: 'D\'accord',
-          customClass: {
-            popup: 'rounded-[32px] shadow-2xl p-6 border-none',
-            title: 'text-[20px] font-black text-gray-800 mt-2',
-            htmlContainer: 'text-[15px] text-gray-500 font-medium',
-            actions: 'w-full mt-6 px-2',
-            confirmButton: 'w-full bg-[#ff0033] text-white rounded-[20px] min-h-[56px] flex items-center justify-center font-black text-[16px] shadow-lg active:scale-95 transition-transform'
-          },
-          buttonsStyling: false
-        });
-      });
-    }
   }
 
   filteredProducts = computed(() => {
@@ -455,6 +435,8 @@ export class ReportsPageComponent {
       next: (res: any) => {
         if (res.success && res.data && res.data.length > 0) {
           this.nearbyStores.set(res.data);
+          // Show disambiguation right away so the user picks before filling the form
+          this.isDisambiguationVisible.set(true);
         }
       },
       error: (err) => console.error('Error fetching nearby stores', err)
