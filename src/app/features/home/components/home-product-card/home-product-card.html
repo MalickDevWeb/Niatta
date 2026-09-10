@@ -1,12 +1,43 @@
+<!-- Carte produit -->
 <div 
-  (click)="cardClick.emit(id)" 
-  class="h-full bg-white rounded-[28px] p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-between gap-2 active:scale-95 transition-transform cursor-pointer">
-  <iconify-icon [icon]="icon" class="text-[60px] leading-none mb-1 drop-shadow-md shrink-0"></iconify-icon>
+  (click)="onCardClick($event)" 
+  class="relative h-full bg-white rounded-[28px] p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-between gap-2 active:scale-95 transition-transform cursor-pointer">
+  
+  <!-- Badge "choisir format" si plusieurs formats -->
+  <div 
+    *ngIf="hasMultipleFormats"
+    class="absolute top-3 right-3 bg-[#e8f5e9] text-[#00a859] text-[10px] font-black px-2 py-0.5 rounded-full">
+    {{ product.formats.length }} formats
+  </div>
+
+  <!-- Icône -->
+  <ng-container *ngIf="isImage; else iconify">
+    <img [src]="product.icon" alt="Image du produit" [alt]="product.name || 'Image du produit'" class="w-[60px] h-[60px] object-contain mb-1 drop-shadow-sm shrink-0 rounded-md" />
+  </ng-container>
+  <ng-template #iconify>
+    <iconify-icon [icon]="product.icon" class="text-[60px] leading-none mb-1 drop-shadow-md shrink-0"></iconify-icon>
+  </ng-template>
+
+  <!-- Nom et format actif -->
   <h3 class="font-black text-[18px] text-gray-900 text-center leading-tight flex-1 flex flex-col justify-center w-full">
-    <span>{{ name }}</span>
-    <span class="text-[12px] text-gray-400 font-bold mt-1">{{ unit }}</span>
+    <span>{{ product.name }}</span>
+    <span class="text-[12px] text-gray-400 font-bold mt-1">{{ activeFormat.label }}</span>
   </h3>
+
+  <!-- Prix -->
   <div class="bg-[#f2fbf5] text-[#00a859] px-4 py-1.5 rounded-full font-black text-[16px] mt-1 border border-[#cbebd6] shrink-0">
-    {{ price }} FCFA
+    {{ formattedPrice }} FCFA
   </div>
 </div>
+
+<!-- Sélecteur de format (Bottom Sheet) -->
+<app-format-selector
+  [visible]="selectorOpen()"
+  [productName]="product.name"
+  [productIcon]="product.icon"
+  [formats]="product.formats"
+  [selectedFormatId]="activeFormat.id"
+  (close)="closeSelector()"
+  (formatSelected)="onFormatSelected($event)"
+  (reportClick)="onReport($event)">
+</app-format-selector>

@@ -1,13 +1,28 @@
+export interface ProductFormat {
+  id: string;
+  label: string;
+  unit: string;
+  weight?: string | null;
+  imageUrl?: string | null;
+  officialPriceCap?: number | null;
+  price: number;
+  shopCount: number;
+}
+
 export interface Product {
   id: string;
   icon: string;
   name: string;
-  unit: string;
-  price: number;
+  slug: string;
   category: string;
-  officialPriceCap?: number;
-  brand?: string;
-  weight?: string;
+  tags: string[];
+  // Format par défaut (affiché sur la carte)
+  defaultFormatId: string;
+  price: number;
+  unit: string;
+  officialPriceCap?: number | null;
+  // Tous les formats disponibles (pour le sélecteur)
+  formats: ProductFormat[];
   shopCount?: number;
 }
 

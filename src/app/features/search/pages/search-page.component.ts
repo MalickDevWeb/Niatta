@@ -1,4 +1,4 @@
-import { Component, signal, computed, effect } from '@angular/core';
+import { Component, signal, computed, effect, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
@@ -12,6 +12,7 @@ import { CategoryService } from '../../../core/services/category.service';
   selector: 'app-search-page',
   standalone: true,
   imports: [CommonModule, BottomNavComponent, SearchBarComponent, CategoryPillComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="min-h-screen bg-white pb-24 font-sans animate-fade-in">
       
@@ -59,7 +60,12 @@ import { CategoryService } from '../../../core/services/category.service';
             class="flex items-center bg-white rounded-[24px] border border-gray-100 p-4 shadow-sm cursor-pointer hover:border-[#00a859] transition-all"
             (click)="goToProduct(product.id)">
             <div class="w-[70px] h-[70px] rounded-2xl bg-gray-50 p-2 flex-shrink-0 flex items-center justify-center border border-gray-100 text-[40px] drop-shadow-sm leading-none">
-              {{ product.icon }}
+              <ng-container *ngIf="product.icon.startsWith('http') || product.icon.startsWith('/'); else iconify">
+                <img [src]="product.icon" [alt]="product.name" class="w-full h-full object-contain rounded-md" />
+              </ng-container>
+              <ng-template #iconify>
+                <iconify-icon [attr.icon]="product.icon"></iconify-icon>
+              </ng-template>
             </div>
             
             <div class="ml-4 flex-grow flex justify-between items-center">

@@ -1,4 +1,4 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { IProductService, Product } from '../interfaces/product.interface';
 import { ApiService } from './api.service';
 
@@ -36,7 +36,11 @@ export class ProductService implements IProductService {
     
     const q = query.toLowerCase().trim();
     if (q !== '') {
-      filtered = filtered.filter(p => p.name.toLowerCase().includes(q));
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(q) ||
+        p.tags?.some(tag => tag.toLowerCase().includes(q)) ||
+        p.formats?.some(f => f.label.toLowerCase().includes(q))
+      );
     }
     
     return filtered;

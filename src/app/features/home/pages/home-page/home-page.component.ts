@@ -31,10 +31,14 @@ import { CategoryService } from '../../../../core/services/category.service';
 
       <!-- Horizontal Category Scroll -->
       <div class="mt-4 w-full">
-        <div class="flex overflow-x-auto gap-3 py-4 px-4 items-center hide-scrollbar">
+        <div class="flex overflow-x-auto gap-3 py-4 items-center hide-scrollbar">
+          <!-- Left spacer -->
+          <div class="w-1 flex-shrink-0"></div>
+          
           <app-category-pill (onClick)="setCategory('Tous')" icon="fluent-emoji-flat:star" label="Tous" [active]="activeCategory() === 'Tous'"></app-category-pill>
           <app-category-pill *ngFor="let cat of categoryService.getCategories()" (onClick)="setCategory(cat.name)" [icon]="cat.icon || 'fluent-emoji-flat:package'" [label]="cat.name" [active]="activeCategory() === cat.name"></app-category-pill>
-          <!-- Dummy element to enforce right padding in webkit -->
+          
+          <!-- Right spacer -->
           <div class="w-1 flex-shrink-0"></div>
         </div>
       </div>
@@ -46,8 +50,9 @@ import { CategoryService } from '../../../../core/services/category.service';
         <div class="grid grid-cols-2 gap-4">
           <app-home-product-card 
             *ngFor="let product of filteredProducts()"
-            [id]="product.id" [icon]="product.icon" [name]="product.name" [unit]="product.unit" [price]="product.price" 
-            (cardClick)="goToProduct($event)">
+            [product]="product"
+            (cardClick)="goToProduct($event)"
+            (reportClick)="onReportPrice($event)">
           </app-home-product-card>
         </div>
       </div>
@@ -90,4 +95,17 @@ export class HomePageComponent {
   }
 
   goToProduct(id: string) { this.router.navigate(['/product', id]); }
+  
+  onReportPrice(event: {productId: string, formatId: string}) {
+    const product = this.productService.getAllProducts().find(p => p.id === event.productId);
+    const format = product?.formats?.find(f => f.id === event.formatId);
+    this.router.navigate(['/reports'], { 
+      queryParams: { 
+        productId: event.productId,
+        productName: product?.name,
+        formatId: event.formatId,
+        formatName: format?.label
+      } 
+    });
+  }
 }

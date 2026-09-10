@@ -10,7 +10,7 @@ import { SearchBarComponent } from '../../../shared/components/search-bar/search
 import { LiveCameraComponent } from '../../../shared/components/live-camera/live-camera.component';
 import { ProductService } from '../../../core/services/product.service';
 import { ApiService } from '../../../core/services/api.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -52,58 +52,60 @@ import Swal from 'sweetalert2';
               <h2 class="text-[17px] font-black text-[#0f172a]">Qu'avez-vous acheté ?</h2>
             </div>
             
-            <!-- Search Bar with voice -->
-            <app-search-bar
-              placeholder="Autre produit (texte ou vocal)"
-              [value]="searchQuery()"
-              [isListening]="voiceService.isListening()"
-              [isOfflineMode]="voiceService.isOfflineMode()"
-              [voskLoading]="voiceService.voskLoadingState() === 'loading'"
-              (valueChange)="setSearchQuery($event)"
-              (voiceSearch)="handleVoiceSearch()">
-            </app-search-bar>
+            <ng-container *ngIf="!isPreselected()">
+              <!-- Search Bar with voice -->
+              <app-search-bar
+                placeholder="Autre produit (texte ou vocal)"
+                [value]="searchQuery()"
+                [isListening]="voiceService.isListening()"
+                [isOfflineMode]="voiceService.isOfflineMode()"
+                [voskLoading]="voiceService.voskLoadingState() === 'loading'"
+                (valueChange)="setSearchQuery($event)"
+                (voiceSearch)="handleVoiceSearch()">
+              </app-search-bar>
 
-            <!-- Product Selector - Filtered list -->
-            <div *ngIf="searchQuery().length > 0" class="flex flex-col gap-2 mt-3 animate-fade-in">
-              <!-- No results -->
-              <div *ngIf="filteredProducts().length === 0" class="flex flex-col items-center py-6 text-center">
-                <iconify-icon icon="fluent-emoji-flat:magnifying-glass-tilted-left" class="text-[40px] mb-2"></iconify-icon>
-                <span class="text-[14px] font-bold text-gray-400">Aucun produit trouvé pour "{{ searchQuery() }}"</span>
-              </div>
-              <!-- Filtered results as vertical list -->
-              <div *ngFor="let p of filteredProducts()" (click)="selectProduct(p.id, p.name)" 
-                   [class]="selectedProduct() === p.id 
-                      ? 'bg-[#e6f7ed] border-[#00a859] ring-2 ring-[#00a859] ring-offset-1' 
-                      : 'bg-white border-gray-100 shadow-sm'"
-                   class="border-[2px] rounded-[20px] px-4 py-3 flex items-center gap-3 cursor-pointer transition-all duration-200 active:scale-[0.98]">
-                <iconify-icon [icon]="p.icon" class="text-[32px] flex-shrink-0 drop-shadow-sm"></iconify-icon>
-                <div class="flex flex-col flex-1">
-                  <span [class]="selectedProduct() === p.id ? 'text-[#00a859]' : 'text-gray-800'" class="text-[15px] font-black leading-tight">{{ p.name }}</span>
-                  <span class="text-[12px] font-medium text-gray-400 mt-0.5">{{ p.unit }}</span>
+              <!-- Product Selector - Filtered list -->
+              <div *ngIf="searchQuery().length > 0" class="flex flex-col gap-2 mt-3 animate-fade-in">
+                <!-- No results -->
+                <div *ngIf="filteredProducts().length === 0" class="flex flex-col items-center py-6 text-center">
+                  <iconify-icon icon="fluent-emoji-flat:magnifying-glass-tilted-left" class="text-[40px] mb-2"></iconify-icon>
+                  <span class="text-[14px] font-bold text-gray-400">Aucun produit trouvé pour "{{ searchQuery() }}"</span>
                 </div>
-                <div *ngIf="selectedProduct() === p.id" class="w-6 h-6 rounded-full bg-[#00a859] flex items-center justify-center">
-                  <iconify-icon icon="lucide:check" class="text-white text-[14px]"></iconify-icon>
+                <!-- Filtered results as vertical list -->
+                <div *ngFor="let p of filteredProducts()" (click)="selectProduct(p.id, p.name)" 
+                     [class]="selectedProduct() === p.id 
+                        ? 'bg-[#e6f7ed] border-[#00a859] ring-2 ring-[#00a859] ring-offset-1' 
+                        : 'bg-white border-gray-100 shadow-sm'"
+                     class="border-[2px] rounded-[20px] px-4 py-3 flex items-center gap-3 cursor-pointer transition-all duration-200 active:scale-[0.98]">
+                  <iconify-icon [icon]="p.icon" class="text-[32px] flex-shrink-0 drop-shadow-sm"></iconify-icon>
+                  <div class="flex flex-col flex-1">
+                    <span [class]="selectedProduct() === p.id ? 'text-[#00a859]' : 'text-gray-800'" class="text-[15px] font-black leading-tight">{{ p.name }}</span>
+                    <span class="text-[12px] font-medium text-gray-400 mt-0.5">{{ p.unit }}</span>
+                  </div>
+                  <div *ngIf="selectedProduct() === p.id" class="w-6 h-6 rounded-full bg-[#00a859] flex items-center justify-center">
+                    <iconify-icon icon="lucide:check" class="text-white text-[14px]"></iconify-icon>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Product Selector - Horizontal scroll (when no search) -->
-            <div *ngIf="searchQuery().length === 0" class="flex overflow-x-auto gap-3 py-3 pr-4 hide-scrollbar -mx-5 px-5 items-center">
-              <div *ngFor="let p of productService.getAllProducts()" (click)="selectProduct(p.id, p.name)" 
-                   [class]="selectedProduct() === p.id 
-                      ? 'bg-white border-[#00a859] ring-2 ring-[#00a859] ring-offset-2' 
-                      : 'bg-white border-gray-100 shadow-sm opacity-90'"
-                   class="border-[2px] rounded-[24px] px-3 py-3 w-[90px] h-[100px] flex flex-col items-center justify-center flex-shrink-0 cursor-pointer transition-all duration-200">
-                <iconify-icon [icon]="p.icon" class="text-[40px] leading-none mb-1 drop-shadow-sm"></iconify-icon>
-                <span [class]="selectedProduct() === p.id ? 'text-[#00a859]' : 'text-gray-500'" class="text-[13px] font-black tracking-tight text-center leading-tight">{{p.name}}</span>
+              <!-- Product Selector - Horizontal scroll (when no search) -->
+              <div *ngIf="searchQuery().length === 0" class="flex overflow-x-auto gap-3 py-3 pr-4 hide-scrollbar -mx-5 px-5 items-center">
+                <div *ngFor="let p of productService.getAllProducts()" (click)="selectProduct(p.id, p.name)" 
+                     [class]="selectedProduct() === p.id 
+                        ? 'bg-white border-[#00a859] ring-2 ring-[#00a859] ring-offset-2' 
+                        : 'bg-white border-gray-100 shadow-sm opacity-90'"
+                     class="border-[2px] rounded-[24px] px-3 py-3 w-[90px] h-[100px] flex flex-col items-center justify-center flex-shrink-0 cursor-pointer transition-all duration-200">
+                  <iconify-icon [icon]="p.icon" class="text-[40px] leading-none mb-1 drop-shadow-sm"></iconify-icon>
+                  <span [class]="selectedProduct() === p.id ? 'text-[#00a859]' : 'text-gray-500'" class="text-[13px] font-black tracking-tight text-center leading-tight">{{p.name}}</span>
+                </div>
               </div>
-            </div>
+            </ng-container>
 
             <!-- Selected product badge -->
             <div *ngIf="selectedProductName()" class="mt-2 flex items-center gap-2 bg-[#e6f7ed] rounded-full px-4 py-2 border border-[#cbebd6]">
               <iconify-icon icon="fluent-emoji-flat:check-mark-button" class="text-[16px]"></iconify-icon>
               <span class="text-[13px] font-black text-[#00a859]">{{ selectedProductName() }}</span>
-              <button (click)="clearProduct()" class="ml-auto w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm">
+              <button *ngIf="!isPreselected()" (click)="clearProduct()" class="ml-auto w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm">
                 <iconify-icon icon="lucide:x" class="text-gray-400 text-[12px]"></iconify-icon>
               </button>
             </div>
@@ -211,16 +213,45 @@ import Swal from 'sweetalert2';
           <!-- Bottom Actions -->
           <div class="flex flex-col gap-2 mt-1">
             <!-- Location Badge -->
-            <div class="h-[56px] bg-[#e6f7ed] rounded-[20px] flex items-center px-4 border border-[#cbebd6] shadow-sm">
+            <div class="h-[56px] rounded-[20px] flex items-center px-4 border shadow-sm cursor-pointer transition-all active:scale-95"
+                 [ngClass]="{
+                   'bg-[#e6f7ed] border-[#cbebd6]': locationStatus() === 'success',
+                   'bg-[#f8fafc] border-gray-200': locationStatus() === 'pending' || locationStatus() === 'loading',
+                   'bg-[#fff0f0] border-red-200': locationStatus() === 'error'
+                 }"
+                 (click)="locationStatus() !== 'loading' ? requestLocation() : null">
               <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm shrink-0">
-                <iconify-icon icon="lucide:map-pin" class="text-[20px] text-[#ff0055]"></iconify-icon>
+                <iconify-icon icon="lucide:map-pin" class="text-[20px]" 
+                  [ngClass]="{
+                    'text-[#ff0055]': locationStatus() === 'success',
+                    'text-gray-400': locationStatus() === 'pending' || locationStatus() === 'loading',
+                    'text-red-500': locationStatus() === 'error'
+                  }"></iconify-icon>
               </div>
               <div class="flex flex-col ml-3 flex-1">
-                <span class="text-[15px] font-black text-[#0f172a] leading-tight">Localisation validée</span>
-                <span class="text-[12px] font-bold text-[#00a859] leading-tight mt-0.5">Précision GPS forte</span>
+                <span class="text-[15px] font-black text-[#0f172a] leading-tight">
+                  <ng-container *ngIf="locationStatus() === 'pending'">Activer la localisation</ng-container>
+                  <ng-container *ngIf="locationStatus() === 'loading'">Recherche GPS...</ng-container>
+                  <ng-container *ngIf="locationStatus() === 'success'">Localisation validée</ng-container>
+                  <ng-container *ngIf="locationStatus() === 'error'">Localisation échouée</ng-container>
+                </span>
+                <span class="text-[12px] font-bold leading-tight mt-0.5"
+                  [ngClass]="{
+                    'text-[#00a859]': locationStatus() === 'success',
+                    'text-gray-400': locationStatus() === 'pending' || locationStatus() === 'loading',
+                    'text-red-500': locationStatus() === 'error'
+                  }">
+                  <ng-container *ngIf="locationStatus() === 'pending'">Cliquez pour autoriser</ng-container>
+                  <ng-container *ngIf="locationStatus() === 'loading'">Veuillez patienter</ng-container>
+                  <ng-container *ngIf="locationStatus() === 'success'">Précision GPS forte</ng-container>
+                  <ng-container *ngIf="locationStatus() === 'error'">Cliquez pour réessayer</ng-container>
+                </span>
               </div>
-              <div class="w-8 h-8 rounded-full bg-[#00a859] flex items-center justify-center shadow-sm">
+              <div *ngIf="locationStatus() === 'success'" class="w-8 h-8 rounded-full bg-[#00a859] flex items-center justify-center shadow-sm">
                 <iconify-icon icon="lucide:check" class="text-white text-[16px] font-bold"></iconify-icon>
+              </div>
+              <div *ngIf="locationStatus() === 'loading'" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shadow-sm animate-spin">
+                <iconify-icon icon="lucide:loader" class="text-gray-500 text-[16px] font-bold"></iconify-icon>
               </div>
             </div>
 
@@ -239,6 +270,36 @@ import Swal from 'sweetalert2';
 
         </form>
       </div>
+
+      <!-- DISAMBIGUATION MODAL -->
+      <div *ngIf="isDisambiguationVisible()" class="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white w-full rounded-t-[32px] p-6 pb-10 shadow-2xl animate-smooth-appear max-h-[85vh] overflow-y-auto">
+          <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+          <h2 class="text-[22px] font-black text-gray-900 mb-2">S'agit-il de cette boutique ?</h2>
+          <p class="text-[14px] text-gray-500 font-medium mb-6">Nous avons détecté des boutiques à proximité de votre position. Sélectionnez-en une si c'est la bonne.</p>
+          
+          <div class="flex flex-col gap-3 mb-6">
+            <div *ngFor="let store of nearbyStores()" (click)="selectExistingStore(store.id)" class="border-2 border-gray-100 rounded-[20px] p-3 flex items-center gap-4 cursor-pointer active:scale-95 transition-transform hover:border-[#00a859]">
+              <div class="w-16 h-16 rounded-[14px] bg-gray-100 flex-shrink-0 overflow-hidden relative">
+                <img *ngIf="store.imageUrl" [src]="store.imageUrl" class="w-full h-full object-cover">
+                <iconify-icon *ngIf="!store.imageUrl" icon="lucide:store" class="text-[24px] text-gray-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></iconify-icon>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[16px] font-black text-gray-800">{{ store.name }}</span>
+                <span class="text-[13px] font-medium text-gray-400 mt-0.5">À environ {{ store.distance_meters | number:'1.0-0' }} mètres</span>
+              </div>
+              <div class="ml-auto w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
+                <iconify-icon icon="lucide:chevron-right" class="text-gray-400 text-[18px]"></iconify-icon>
+              </div>
+            </div>
+          </div>
+
+          <button (click)="createNewStore()" class="w-full h-[56px] rounded-[20px] bg-gray-100 text-gray-700 font-black text-[16px] flex items-center justify-center active:scale-95 transition-transform">
+            Non, c'est une autre boutique
+          </button>
+        </div>
+      </div>
+
       <app-bottom-nav currentRoute="reports"></app-bottom-nav>
     </div>
     <style>
@@ -257,6 +318,50 @@ export class ReportsPageComponent {
   
   isSubmitting = signal<boolean>(false);
 
+  isPreselected = signal<boolean>(false);
+  selectedFormatId = signal<string | null>(null);
+
+  latitude = signal<number | null>(null);
+  longitude = signal<number | null>(null);
+  locationStatus = signal<'pending' | 'loading' | 'success' | 'error'>('pending');
+  
+  nearbyStores = signal<any[]>([]);
+  isDisambiguationVisible = signal<boolean>(false);
+  selectedStoreId = signal<string | null>(null);
+  hasDisambiguated = signal<boolean>(false);
+
+  selectExistingStore(storeId: string) {
+    this.selectedStoreId.set(storeId);
+    this.hasDisambiguated.set(true);
+    this.isDisambiguationVisible.set(false);
+    this.submitObservation();
+  }
+
+  createNewStore() {
+    this.selectedStoreId.set(null);
+    this.hasDisambiguated.set(true);
+    this.isDisambiguationVisible.set(false);
+    
+    if (!this.cameraService.capturedImage()) {
+      import('sweetalert2').then(m => m.default).then(Swal => {
+        Swal.fire({
+          title: 'Photo requise',
+          text: 'Pour signaler une nouvelle boutique, vous devez prendre une photo de sa devanture.',
+          icon: 'warning',
+          confirmButtonText: 'D\'accord',
+          customClass: {
+            popup: 'rounded-[32px] shadow-2xl p-6 border-none',
+            title: 'text-[20px] font-black text-gray-800 mt-2',
+            htmlContainer: 'text-[15px] text-gray-500 font-medium',
+            actions: 'w-full mt-6 px-2',
+            confirmButton: 'w-full bg-[#ff0033] text-white rounded-[20px] min-h-[56px] flex items-center justify-center font-black text-[16px] shadow-lg active:scale-95 transition-transform'
+          },
+          buttonsStyling: false
+        });
+      });
+    }
+  }
+
   filteredProducts = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
     if (q === '') return [];
@@ -271,7 +376,8 @@ export class ReportsPageComponent {
     public productService: ProductService,
     private apiService: ApiService,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private route: ActivatedRoute
   ) {
     effect(() => {
       const text = this.voiceService.recognizedText();
@@ -279,7 +385,79 @@ export class ReportsPageComponent {
         this.searchQuery.set(text);
         this.selectedProduct.set('');
         this.selectedProductName.set('');
+        this.selectedFormatId.set(null);
       }
+    });
+
+    const pId = this.route.snapshot.queryParamMap.get('productId');
+    const pName = this.route.snapshot.queryParamMap.get('productName');
+    const fId = this.route.snapshot.queryParamMap.get('formatId');
+    const fName = this.route.snapshot.queryParamMap.get('formatName');
+    
+    if (pId && pName) {
+      this.selectedProduct.set(pId);
+      this.selectedProductName.set(fName ? `${pName} (${fName})` : pName);
+      if (fId) this.selectedFormatId.set(fId);
+      this.isPreselected.set(true);
+    }
+  }
+
+  ngOnInit() {
+    this.requestLocation();
+  }
+
+  requestLocation() {
+    if (!navigator.geolocation) {
+      this.locationStatus.set('error');
+      return;
+    }
+    
+    this.locationStatus.set('loading');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (position.coords.accuracy > 30) {
+          // Utiliser Swal pour bloquer en cas de précision insuffisante
+          import('sweetalert2').then(m => m.default).then(Swal => {
+            Swal.fire({
+              title: 'Précision insuffisante',
+              text: `Activez votre localisation haute précision pour continuer (Précision actuelle : ${Math.round(position.coords.accuracy)} mètres, requis: < 30m).`,
+              icon: 'error',
+              confirmButtonText: 'Réessayer',
+              customClass: {
+                popup: 'rounded-[32px] shadow-2xl p-6 border-none',
+                title: 'text-[20px] font-black text-gray-800 mt-2',
+                htmlContainer: 'text-[15px] text-gray-500 font-medium',
+                actions: 'w-full mt-6 px-2',
+                confirmButton: 'w-full bg-[#ff0033] text-white rounded-[20px] min-h-[56px] flex items-center justify-center font-black text-[16px] shadow-lg active:scale-95 transition-transform'
+              },
+              buttonsStyling: false
+            });
+          });
+          this.locationStatus.set('error');
+          return;
+        }
+
+        this.latitude.set(position.coords.latitude);
+        this.longitude.set(position.coords.longitude);
+        this.locationStatus.set('success');
+        this.fetchNearbyStores(position.coords.latitude, position.coords.longitude);
+      },
+      (error) => {
+        console.error('Error getting location', error);
+        this.locationStatus.set('error');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  fetchNearbyStores(lat: number, lng: number) {
+    this.apiService.get(`/stores/nearby?lat=${lat}&lng=${lng}&radius=10`).subscribe({
+      next: (res: any) => {
+        if (res.success && res.data && res.data.length > 0) {
+          this.nearbyStores.set(res.data);
+        }
+      },
+      error: (err) => console.error('Error fetching nearby stores', err)
     });
   }
 
@@ -364,6 +542,49 @@ export class ReportsPageComponent {
           htmlContainer: 'text-[15px] text-gray-500 font-medium',
           actions: 'w-full mt-6 px-2',
           confirmButton: 'w-full bg-[#ff0033] text-white rounded-[20px] min-h-[56px] flex items-center justify-center font-black text-[16px] shadow-[0_8px_20px_-6px_rgba(255,0,51,0.5)] active:scale-95 transition-transform'
+        },
+        buttonsStyling: false,
+        backdrop: 'rgba(0,0,0,0.6)'
+      });
+      return;
+    }
+
+    if (this.locationStatus() !== 'success') {
+      Swal.fire({
+        title: 'Localisation requise',
+        text: 'Veuillez autoriser et activer l\'accès à votre position GPS pour signaler un prix.',
+        icon: 'warning',
+        confirmButtonText: 'D\'accord',
+        customClass: {
+          popup: 'rounded-[32px] shadow-2xl p-6 border-none',
+          title: 'text-[20px] font-black text-gray-800 mt-2',
+          htmlContainer: 'text-[15px] text-gray-500 font-medium',
+          actions: 'w-full mt-6 px-2',
+          confirmButton: 'w-full bg-gray-900 text-white rounded-[20px] min-h-[56px] flex items-center justify-center font-black text-[16px] shadow-lg active:scale-95 transition-transform'
+        },
+        buttonsStyling: false,
+        backdrop: 'rgba(0,0,0,0.6)'
+      });
+      return;
+    }
+    
+    if (this.nearbyStores().length > 0 && !this.hasDisambiguated()) {
+      this.isDisambiguationVisible.set(true);
+      return;
+    }
+
+    if (!this.selectedStoreId() && !this.cameraService.capturedImage()) {
+      Swal.fire({
+        title: 'Photo requise',
+        text: 'Pour signaler une nouvelle boutique, vous devez prendre une photo de sa devanture.',
+        icon: 'warning',
+        confirmButtonText: 'D\'accord',
+        customClass: {
+          popup: 'rounded-[32px] shadow-2xl p-6 border-none',
+          title: 'text-[20px] font-black text-gray-800 mt-2',
+          htmlContainer: 'text-[15px] text-gray-500 font-medium',
+          actions: 'w-full mt-6 px-2',
+          confirmButton: 'w-full bg-[#ff0033] text-white rounded-[20px] min-h-[56px] flex items-center justify-center font-black text-[16px] shadow-lg active:scale-95 transition-transform'
         },
         buttonsStyling: false,
         backdrop: 'rgba(0,0,0,0.6)'
@@ -516,13 +737,20 @@ export class ReportsPageComponent {
   private sendToApi(currentPrice: number) {
     this.isSubmitting.set(true);
     
-    this.apiService.post('/observations', {
+    const payload = {
       productId: this.selectedProduct(),
+      formatId: this.selectedFormatId(),
+      storeId: this.selectedStoreId(),
       price: currentPrice,
-      storeName: 'Boutique (Signalement PWA)',
       city: 'Dakar',
-      neighborhood: 'Plateau'
-    }).subscribe({
+      neighborhood: 'Plateau',
+      storeName: 'Boutique (Signalement Mobile)',
+      latitude: this.latitude(),
+      longitude: this.longitude(),
+      photoUrl: this.cameraService.capturedImage()
+    };
+
+    this.apiService.post('/observations', payload).subscribe({
       next: (res) => {
         this.isSubmitting.set(false);
         Swal.fire({

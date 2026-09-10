@@ -1,12 +1,14 @@
-import { Component, inject, computed, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, inject, computed, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
+import { FormatSelectorComponent } from '../../../shared/components/format-selector/format-selector.component';
+import { ProductFormat } from '../../../core/interfaces/product.interface';
 
 @Component({
   selector: 'app-product-detail-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormatSelectorComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="min-h-screen bg-gray-50 pb-8 font-sans animate-fade-in" *ngIf="product()">
@@ -28,7 +30,12 @@ import { ProductService } from '../../../core/services/product.service';
       <!-- Product Emoji Section -->
       <div class="bg-gradient-to-b from-gray-50 to-white px-4 pt-12 pb-10 flex flex-col justify-center items-center rounded-b-[40px] shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] mb-8 relative border-b border-gray-100">
         <div class="text-[110px] leading-none mb-4 drop-shadow-lg transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
-          <iconify-icon [icon]="product()?.icon || 'twemoji:package'"></iconify-icon>
+          <ng-container *ngIf="isImage(); else iconify">
+            <img [src]="product()?.icon" [alt]="product()?.name" class="w-32 h-32 object-contain" />
+          </ng-container>
+          <ng-template #iconify>
+            <iconify-icon [icon]="product()?.icon || 'twemoji:package'"></iconify-icon>
+          </ng-template>
         </div>
         <!-- Status Badge -->
         <div class="absolute bottom-[-18px] left-1/2 transform -translate-x-1/2 w-max">
@@ -50,7 +57,9 @@ import { ProductService } from '../../../core/services/product.service';
       <div class="px-5 mt-10">
         <div class="mb-6 text-center">
           <h2 class="text-[28px] font-black text-gray-900 leading-tight tracking-tight">{{ product()?.name }}</h2>
-          <p class="text-[15px] text-gray-500 font-bold mt-1.5 bg-gray-100 inline-block px-3 py-1 rounded-full">{{ product()?.brand }} • {{ product()?.weight }}</p>
+          <div class="mt-4 flex flex-wrap gap-2 justify-center">
+            <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium border border-gray-200">{{ product()?.category }}</span>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4 mb-8">
@@ -100,7 +109,7 @@ import { ProductService } from '../../../core/services/product.service';
 
         <!-- Action Buttons -->
         <div class="flex gap-4 pb-4">
-           <button (click)="goToReports()" class="flex-1 bg-red-50 text-red-600 border border-red-200 font-black text-[16px] py-4 rounded-[20px] transition-colors shadow-sm flex items-center justify-center gap-2 hover:bg-red-100 active:scale-95">
+           <button (click)="openFormatSelector()" class="flex-1 bg-red-50 text-red-600 border border-red-200 font-black text-[16px] py-4 rounded-[20px] transition-colors shadow-sm flex items-center justify-center gap-2 hover:bg-red-100 active:scale-95">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
@@ -115,6 +124,18 @@ import { ProductService } from '../../../core/services/product.service';
            </button>
         </div>
       </div>
+      
+      <!-- Selecteur de format (Bottom Sheet) -->
+      <app-format-selector
+        [visible]="isFormatSelectorVisible()"
+        [productName]="product()?.name || ''"
+        [productIcon]="product()?.icon || 'twemoji:package'"
+        [formats]="product()?.formats || []"
+        [selectedFormatId]="selectedFormatId()"
+        (close)="isFormatSelectorVisible.set(false)"
+        (formatSelected)="onFormatSelected($event)"
+        (reportClick)="onReportFormat($event)">
+      </app-format-selector>
     </div>
 
     <!-- Error State -->
@@ -138,17 +159,59 @@ export class ProductDetailPageComponent {
   private location = inject(Location);
   private productService = inject(ProductService);
 
+  isFormatSelectorVisible = signal(false);
+  selectedFormatId = signal<string>('');
+
   product = computed(() => {
     const id = this.route.snapshot.paramMap.get('id');
     return this.productService.getAllProducts().find(p => p.id === id);
   });
 
+  isImage(): boolean {
+    const icon = this.product()?.icon;
+    return icon ? (icon.startsWith('http') || icon.startsWith('/')) : false;
+  }
+
   goBack() {
     this.location.back();
   }
 
+  openFormatSelector() {
+    const p = this.product();
+    if (p && p.formats && p.formats.length > 0) {
+      if (!this.selectedFormatId()) {
+        this.selectedFormatId.set(p.formats[0].id);
+      }
+      this.isFormatSelectorVisible.set(true);
+    } else {
+      this.goToReports();
+    }
+  }
+
+  onFormatSelected(format: ProductFormat) {
+    this.selectedFormatId.set(format.id);
+  }
+
+  onReportFormat(formatId: string) {
+    const p = this.product();
+    const format = p?.formats?.find(f => f.id === formatId);
+    this.router.navigate(['/reports'], { 
+      queryParams: { 
+        productId: p?.id,
+        productName: p?.name,
+        formatId: formatId,
+        formatName: format?.label
+      }
+    });
+  }
+
   goToReports() {
-    this.router.navigate(['/reports']);
+    this.router.navigate(['/reports'], { 
+      queryParams: { 
+        productId: this.product()?.id,
+        productName: this.product()?.name
+      }
+    });
   }
 
   goToMap() {
