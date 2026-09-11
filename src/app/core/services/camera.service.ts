@@ -5,13 +5,19 @@ import { ICameraService } from '../interfaces/camera.interface';
   providedIn: 'root'
 })
 export class CameraService implements ICameraService {
-  public capturedImage = signal<string | null>(null);
+  public capturedImages = signal<string[]>([]);
 
-  setImage(base64: string): void {
-    this.capturedImage.set(base64);
+  addImage(base64: string): void {
+    if (this.capturedImages().length < 3) {
+      this.capturedImages.update(images => [...images, base64]);
+    }
   }
 
-  clearImage(): void {
-    this.capturedImage.set(null);
+  removeImage(index: number): void {
+    this.capturedImages.update(images => images.filter((_, i) => i !== index));
+  }
+
+  clearImages(): void {
+    this.capturedImages.set([]);
   }
 }

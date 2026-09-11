@@ -171,7 +171,7 @@ import Swal from 'sweetalert2';
               <h2 class="text-[17px] font-black text-[#0f172a]">Photo de la boutique (Si possible)</h2>
             </div>
             
-            <ng-container *ngIf="!isCameraActive() && !cameraService.capturedImage()">
+            <ng-container *ngIf="!isCameraActive() && cameraService.capturedImages().length < 3">
               <button type="button" (click)="isCameraActive.set(true)" class="relative w-full bg-[#00a859] rounded-[24px] p-3 flex items-center shadow-[0_8px_20px_-6px_rgba(0,168,89,0.5)] active:scale-95 transition-all overflow-hidden group border-2 border-[#00a859]">
                 <!-- Decorative Icon Background -->
                 <iconify-icon icon="lucide:camera" class="absolute -right-4 -bottom-6 text-[120px] text-[#008f4c] opacity-20"></iconify-icon>
@@ -199,13 +199,12 @@ import Swal from 'sweetalert2';
             </div>
 
             <!-- Image preview -->
-            <div *ngIf="cameraService.capturedImage()" class="mt-2 relative w-full h-[180px] rounded-[24px] border-[3px] border-[#00a859] overflow-hidden shadow-md">
-              <img [src]="cameraService.capturedImage()" class="w-full h-full object-cover">
-              <button (click)="clearImage()" class="absolute top-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg text-red-500 active:scale-90 transition-transform border-[2px] border-red-100">
-                <iconify-icon icon="lucide:trash-2" class="text-[20px]"></iconify-icon>
-              </button>
-              <div class="absolute bottom-3 left-3 bg-[#00a859] text-white text-[11px] font-black px-3 py-1.5 rounded-full flex items-center shadow-md">
-                <iconify-icon icon="fluent-emoji-flat:check-mark-button" class="mr-1"></iconify-icon> Capturée
+            <div *ngIf="cameraService.capturedImages().length > 0" class="mt-2 flex gap-2 overflow-x-auto pb-2" style="scrollbar-width: none;">
+              <div *ngFor="let img of cameraService.capturedImages(); let i = index" class="relative w-[140px] h-[140px] flex-shrink-0 rounded-[20px] border-[2px] border-[#00a859] overflow-hidden shadow-sm">
+                <img [src]="img" class="w-full h-full object-cover">
+                <button type="button" (click)="removeImage(i)" class="absolute top-2 right-2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md text-red-500 active:scale-90 transition-transform">
+                  <iconify-icon icon="lucide:trash-2" class="text-[16px]"></iconify-icon>
+                </button>
               </div>
             </div>
           </div>
@@ -476,13 +475,12 @@ export class ReportsPageComponent {
   }
 
   onImageCaptured(base64: string) {
-    this.cameraService.setImage(base64);
+    this.cameraService.addImage(base64);
     this.isCameraActive.set(false);
   }
 
-  clearImage() {
-    this.cameraService.clearImage();
-    this.isCameraActive.set(false);
+  removeImage(index: number) {
+    this.cameraService.removeImage(index);
   }
   
   onPriceChange(event: any) {
@@ -564,7 +562,7 @@ export class ReportsPageComponent {
       return;
     }
 
-    if (!this.selectedStoreId() && !this.cameraService.capturedImage()) {
+    if (!this.selectedStoreId() && this.cameraService.capturedImages().length === 0) {
       Swal.fire({
         title: 'Photo requise',
         text: 'Pour signaler une nouvelle boutique, vous devez prendre une photo de sa devanture.',
@@ -738,7 +736,7 @@ export class ReportsPageComponent {
       storeName: 'Boutique (Signalement Mobile)',
       latitude: this.latitude(),
       longitude: this.longitude(),
-      photoUrl: this.cameraService.capturedImage()
+      photoUrls: this.cameraService.capturedImages()
     };
 
     this.apiService.post('/observations', payload).subscribe({
