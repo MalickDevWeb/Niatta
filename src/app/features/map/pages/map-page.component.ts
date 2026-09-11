@@ -7,6 +7,7 @@ import { PushNotificationService } from '../../../core/services/push-notificatio
 import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
 import { useRegion } from '../../../core/hooks/use-region';
 import Swal from 'sweetalert2';
+import { environment } from '../../../../environments/environment';
 
 interface GatheringPoint {
   id: string;
@@ -240,7 +241,7 @@ export class MapPageComponent implements OnInit {
   /** Charge les boutiques actives depuis l'API */
   loadStores() {
     this.loadingStores.set(true);
-    this.http.get<{ success: boolean; data: Store[] }>('http://localhost:3000/api/stores')
+    this.http.get<{ success: boolean; data: Store[] }>(`${environment.apiUrl}/stores`)
       .subscribe({
         next: (res) => {
           this.stores.set(res.data || []);
@@ -253,7 +254,7 @@ export class MapPageComponent implements OnInit {
   /** Charge le point de rassemblement actif depuis l'API */
   loadGatheringPoint() {
     this.loadingGathering.set(true);
-    this.http.get<{ success: boolean; data: GatheringPoint | null }>('http://localhost:3000/api/gatherings')
+    this.http.get<{ success: boolean; data: GatheringPoint | null }>(`${environment.apiUrl}/gatherings`)
       .subscribe({
         next: (res) => {
           this.gatheringPoint.set(res.data);
