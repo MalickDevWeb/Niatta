@@ -39,7 +39,7 @@ import { CategoryService } from '../../../core/services/category.service';
           
           <!-- Category Pills -->
           <div class="flex overflow-x-auto gap-3 pb-2 hide-scrollbar">
-            <app-category-pill (onClick)="setCategory('Tous')" icon="fluent-emoji-flat:star" label="Tous" [active]="activeCategory() === 'Tous'"></app-category-pill>
+            <app-category-pill (onClick)="setCategory('Tous')" icon="/assets/images/tous.jpg" label="Tous" [active]="activeCategory() === 'Tous'"></app-category-pill>
             <app-category-pill *ngFor="let cat of categoryService.getCategories()" (onClick)="setCategory(cat.name)" [icon]="cat.icon || 'fluent-emoji-flat:package'" [label]="cat.name" [active]="activeCategory() === cat.name"></app-category-pill>
           </div>
         </div>
