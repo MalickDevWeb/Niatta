@@ -58,6 +58,40 @@ import { CategoryService } from '../../../../core/services/category.service';
       </div>
 
       <app-bottom-nav currentRoute="home"></app-bottom-nav>
+
+      <!-- MAGNIFICENT VOICE SEARCH OVERLAY -->
+      <div *ngIf="voiceService.isListening()" 
+           class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-xl animate-fade-in touch-none">
+        
+        <!-- Animated Mic Button with Ripple -->
+        <div class="relative flex items-center justify-center mb-12">
+          <!-- Ripple Rings -->
+          <div class="absolute w-[120px] h-[120px] bg-[#00a859]/30 rounded-full animate-ping"></div>
+          <div class="absolute w-[160px] h-[160px] bg-[#00a859]/20 rounded-full animate-pulse"></div>
+          
+          <button (click)="handleVoiceSearch()" class="relative z-10 w-[80px] h-[80px] bg-gradient-to-br from-[#00a859] to-[#007b40] rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(0,168,89,0.6)]">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="white" class="w-10 h-10 animate-bounce">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Live Transcription Text -->
+        <div class="px-8 text-center">
+          <p class="text-white/70 text-[18px] font-medium mb-2 tracking-wide uppercase text-sm">Je vous écoute...</p>
+          <p class="text-white text-[32px] font-black leading-tight min-h-[80px]">
+            {{ voiceService.recognizedText() || 'Dites "Riz" ou "Sucre"' }}
+            <span class="animate-pulse inline-block w-1 h-8 bg-[#00a859] ml-1 align-middle"></span>
+          </p>
+        </div>
+
+        <!-- Cancel Button -->
+        <button (click)="handleVoiceSearch()" class="absolute bottom-12 px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold backdrop-blur-md transition-colors">
+          Annuler
+        </button>
+
+      </div>
+
     </div>
     <style>
       .hide-scrollbar::-webkit-scrollbar { display: none; }

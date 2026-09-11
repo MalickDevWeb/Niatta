@@ -218,6 +218,7 @@ export class VoiceRecognitionService implements IVoiceRecognitionService {
   // ─────────────────────────────────────────────────
 
   startListening(): void {
+    this.recognizedText.set(''); // Clear previous text
     if (this.isOfflineMode() || !this.recognition) {
       // Mode offline → Vosk
       console.log('[Voice] Using Vosk (offline mode)');
