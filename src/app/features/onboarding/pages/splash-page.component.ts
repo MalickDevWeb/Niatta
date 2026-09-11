@@ -29,8 +29,13 @@ interface Slide {
       <div class="relative z-10 flex flex-col h-screen">
         
         <!-- Header / Logo -->
-        <div class="pt-16 px-8 flex flex-col items-center">
-          <div class="flex items-center gap-3">
+        <div class="pt-12 px-6 flex flex-col items-center relative w-full">
+          <!-- Passer Button -->
+          <button (click)="getStarted()" class="absolute top-12 right-6 px-4 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full text-white text-[13px] font-bold transition-all shadow-md border border-white/20 z-20 active:scale-95">
+            Passer
+          </button>
+          
+          <div class="flex items-center gap-3 mt-10">
             <div class="relative w-10 h-12">
               <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-lg">
                 <path d="M20 0C8.954 0 0 8.954 0 20C0 35 20 50 20 50C20 50 40 35 40 20C40 8.954 31.046 0 20 0Z" fill="#00a859"/>

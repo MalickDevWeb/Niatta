@@ -20,8 +20,12 @@
   <script src="https://code.iconify.design/iconify-icon/2.0.0/iconify-icon.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-900 font-sans antialiased sm:bg-[#e8ecef] sm:flex sm:justify-center sm:items-center sm:min-h-screen">
-  <div class="w-full min-h-screen sm:min-h-0 sm:h-[844px] sm:max-h-[90vh] sm:w-[390px] bg-white sm:rounded-[40px] sm:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] sm:border-[8px] sm:border-gray-800 relative overflow-hidden" style="transform: translateZ(0);">
-    <app-root class="block w-full h-full overflow-y-auto overflow-x-hidden bg-white"></app-root>
+  <div class="w-full min-h-screen sm:min-h-0 sm:h-[844px] sm:max-h-[90vh] sm:w-[390px] bg-white sm:rounded-[45px] sm:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] sm:border-[12px] sm:border-black relative overflow-hidden" style="transform: translateZ(0);">
+    <!-- iPhone Notch Simulation -->
+    <div class="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-[140px] h-[30px] bg-black rounded-b-[20px] z-[100] shadow-[inset_0_-2px_4px_rgba(255,255,255,0.05)]">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-1.5 rounded-full bg-gray-800"></div>
+    </div>
+    <app-root class="block w-full h-full overflow-y-auto overflow-x-hidden bg-white no-scrollbar sm:pt-10"></app-root>
   </div>
   <noscript>Please enable JavaScript to continue using this application.</noscript>
 </body>

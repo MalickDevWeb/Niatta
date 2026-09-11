@@ -164,11 +164,11 @@ import Swal from 'sweetalert2';
             </div>
           </div>
 
-          <!-- Section 4: Photo de la boutique -->
-          <div *ngIf="!selectedStoreId()">
+          <!-- Section 4: Photo (Preuve obligatoire) -->
+          <div>
             <div class="flex items-center gap-3 mb-3">
               <div class="w-7 h-7 rounded-full bg-[#00a859] text-white flex items-center justify-center font-black text-[14px] shadow-sm">4</div>
-              <h2 class="text-[17px] font-black text-[#0f172a]">Photo de la boutique (Si possible)</h2>
+              <h2 class="text-[17px] font-black text-[#0f172a]">Preuve visuelle (Obligatoire)</h2>
             </div>
             
             <ng-container *ngIf="!isCameraActive() && cameraService.capturedImages().length < 3">
@@ -562,10 +562,10 @@ export class ReportsPageComponent {
       return;
     }
 
-    if (!this.selectedStoreId() && this.cameraService.capturedImages().length === 0) {
+    if (this.cameraService.capturedImages().length === 0) {
       Swal.fire({
-        title: 'Photo requise',
-        text: 'Pour signaler une nouvelle boutique, vous devez prendre une photo de sa devanture.',
+        title: 'Preuve requise',
+        text: 'Pour garantir la fiabilité de votre alerte, vous devez obligatoirement ajouter au moins une photo (jusqu\'à 3 photos).',
         icon: 'warning',
         confirmButtonText: 'D\'accord',
         customClass: {
