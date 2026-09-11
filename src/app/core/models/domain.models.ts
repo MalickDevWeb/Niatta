@@ -17,6 +17,8 @@ export interface Store {
   distance?: number;
   city?: string;
   neighborhood?: string;
+  imageUrl?: string;
+  photos?: string[];
 }
 
 export interface PriceObservation {

@@ -279,17 +279,26 @@ import Swal from 'sweetalert2';
           <p class="text-[14px] text-gray-500 font-medium mb-6">Nous avons détecté des boutiques à proximité de votre position. Sélectionnez-en une si c'est la bonne.</p>
           
           <div class="flex flex-col gap-3 mb-6">
-            <div *ngFor="let store of nearbyStores()" (click)="selectExistingStore(store.id)" class="border-2 border-gray-100 rounded-[20px] p-3 flex items-center gap-4 cursor-pointer active:scale-95 transition-transform hover:border-[#00a859]">
-              <div class="w-16 h-16 rounded-[14px] bg-gray-100 flex-shrink-0 overflow-hidden relative">
-                <img *ngIf="store.imageUrl" [src]="store.imageUrl" class="w-full h-full object-cover">
-                <iconify-icon *ngIf="!store.imageUrl" icon="lucide:store" class="text-[24px] text-gray-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></iconify-icon>
+            <div *ngFor="let store of nearbyStores()" (click)="selectExistingStore(store.id)" class="border-2 border-gray-100 rounded-[20px] p-4 flex flex-col gap-3 cursor-pointer active:scale-95 transition-transform hover:border-[#00a859]">
+              <div class="flex items-center gap-4">
+                <div *ngIf="!store.photos || store.photos.length === 0" class="w-14 h-14 rounded-[12px] bg-gray-100 flex-shrink-0 overflow-hidden relative">
+                  <img *ngIf="store.imageUrl" [src]="store.imageUrl" class="w-full h-full object-cover">
+                  <iconify-icon *ngIf="!store.imageUrl" icon="lucide:store" class="text-[24px] text-gray-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></iconify-icon>
+                </div>
+                <div class="flex flex-col flex-1">
+                  <span class="text-[16px] font-black text-gray-800">{{ store.name }}</span>
+                  <span class="text-[13px] font-medium text-gray-400 mt-0.5">À environ {{ store.distance_meters | number:'1.0-0' }} mètres</span>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0">
+                  <iconify-icon icon="lucide:chevron-right" class="text-gray-400 text-[18px]"></iconify-icon>
+                </div>
               </div>
-              <div class="flex flex-col">
-                <span class="text-[16px] font-black text-gray-800">{{ store.name }}</span>
-                <span class="text-[13px] font-medium text-gray-400 mt-0.5">À environ {{ store.distance_meters | number:'1.0-0' }} mètres</span>
-              </div>
-              <div class="ml-auto w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
-                <iconify-icon icon="lucide:chevron-right" class="text-gray-400 text-[18px]"></iconify-icon>
+              
+              <!-- Liste des photos si disponibles -->
+              <div *ngIf="store.photos && store.photos.length > 0" class="flex gap-2 overflow-x-auto pb-1 mt-1" style="scrollbar-width: none;">
+                <div *ngFor="let photo of store.photos" class="w-24 h-24 rounded-[12px] flex-shrink-0 overflow-hidden border border-gray-100 shadow-sm relative">
+                  <img [src]="photo" class="w-full h-full object-cover">
+                </div>
               </div>
             </div>
           </div>
