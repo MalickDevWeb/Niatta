@@ -1,12 +1,12 @@
-import { Component, signal, CUSTOM_ELEMENTS_SCHEMA, OnInit, computed } from '@angular/core';
+import { Component, signal, computed, CUSTOM_ELEMENTS_SCHEMA, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 import { PushNotificationService } from '../../../core/services/push-notification.service';
 import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
-import { useRegion } from '../../../core/hooks/use-region';
 import Swal from 'sweetalert2';
+import * as L from 'leaflet';
 import { environment } from '../../../../environments/environment';
 
 interface GatheringPoint {
@@ -64,15 +64,51 @@ interface Store {
               Meilleurs prix
             </button>
           </div>
+          <label class="flex min-w-0 items-center gap-2 rounded-full border border-gray-100 bg-white px-4 py-2.5 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-5 w-5 shrink-0 text-[#00a859]">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h18M6.75 9h10.5M10.5 13.5h3M12 13.5v6" />
+            </svg>
+            <span class="shrink-0 text-xs font-black text-gray-500">Quartier</span>
+            <select
+              [value]="selectedNeighborhood()"
+              (change)="setNeighborhood($any($event.target).value)"
+              class="min-w-0 flex-1 truncate bg-transparent text-sm font-black text-gray-800 outline-none">
+              <option value="Tous">Tous les quartiers</option>
+              <option *ngFor="let neighborhood of neighborhoods()" [value]="neighborhood">{{ neighborhood }}</option>
+            </select>
+          </label>
         </div>
       </header>
 
-      <!-- Map Area -->
+      <!-- Real GPS map -->
       <div class="flex-grow w-full relative z-0 bg-[#e8f2eb]">
-        <img 
-          src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80" 
-          alt="Carte" 
-          class="w-full h-full object-cover opacity-60 grayscale-[30%] sepia-[20%] hue-rotate-[-30deg]" />
+        <div #mapElement class="absolute inset-0 z-0" aria-label="Carte GPS des boutiques"></div>
+
+        <div *ngIf="locationStatus() === 'error'" class="absolute top-36 left-4 right-4 z-30 rounded-2xl bg-white/95 px-4 py-3 text-center shadow-lg">
+          <p class="text-sm font-bold text-gray-700">Position GPS indisponible</p>
+          <button (click)="requestLocation()" class="mt-1 text-xs font-black text-[#00a859]">Réessayer</button>
+        </div>
+
+        <button
+          (click)="requestLocation()"
+          [disabled]="locationStatus() === 'loading'"
+          class="absolute bottom-[180px] left-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#2f80ed] shadow-lg disabled:opacity-60"
+          aria-label="Recentrer sur ma position">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-6 w-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l6 6m-6-6V9m0 6h6M9 9l-6-6m6 6V3m0 6H3m6 6-6 6m6-6v6m0-6h6" />
+          </svg>
+        </button>
+
+        <div class="absolute bottom-[180px] right-4 z-30 rounded-xl bg-white/95 px-3 py-2 text-[11px] font-bold text-gray-700 shadow-lg">
+          <div class="mb-1 flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full bg-[#00a859]"></span>
+            <span>Boutique</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full bg-[#f97316]"></span>
+            <span>+5 signalements</span>
+          </div>
+        </div>
 
         <!-- Gathering Alert Button -->
         <button 
@@ -98,49 +134,6 @@ interface Store {
           </div>
         </div>
 
-        <!-- Pins Overlay — Viennent de la BDD -->
-        <div class="absolute inset-0">
-          
-          <!-- Pins dynamiques depuis l'API -->
-          <div 
-            *ngFor="let store of stores(); let i = index"
-            (click)="selectShop(store)"
-            [style.top]="getPinTop(i) + '%'"
-            [style.left]="getPinLeft(i) + '%'"
-            class="absolute -translate-x-1/2 -translate-y-full cursor-pointer z-20">
-            <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-8 h-10 drop-shadow-md hover:scale-110 transition-transform">
-              <path d="M20 0C8.954 0 0 8.954 0 20C0 35 20 50 20 50C20 50 40 35 40 20C40 8.954 31.046 0 20 0Z" fill="#00a859"/>
-              <circle cx="20" cy="20" r="7" fill="white"/>
-            </svg>
-          </div>
-
-          <!-- Empty state si aucune boutique -->
-          <div *ngIf="!loadingStores() && stores().length === 0" class="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-20">
-            <div class="bg-white/90 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-lg">
-              <p class="text-gray-500 text-sm font-bold">Aucune boutique sur la carte</p>
-              <p class="text-gray-400 text-xs mt-1">L'admin peut en ajouter depuis le back-office</p>
-            </div>
-          </div>
-
-          <!-- Position actuelle (point bleu) -->
-          <div class="absolute top-[50%] left-[55%] -translate-x-1/2 -translate-y-full z-30">
-            <div class="absolute inset-0 bg-[#2f80ed] rounded-full animate-ping opacity-40 h-[20px] w-[20px] top-[15px] left-[10px]"></div>
-            <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-10 h-12 drop-shadow-lg relative">
-              <path d="M20 0C8.954 0 0 8.954 0 20C0 35 20 50 20 50C20 50 40 35 40 20C40 8.954 31.046 0 20 0Z" fill="#2f80ed"/>
-              <circle cx="20" cy="20" r="8" fill="white"/>
-              <circle cx="20" cy="20" r="3" fill="#2f80ed"/>
-            </svg>
-          </div>
-          
-          <!-- Dynamic Region Label -->
-          <div class="absolute bottom-[45%] right-[20%] text-[18px] font-black text-gray-500/80 uppercase tracking-widest drop-shadow-sm flex items-center gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-            </svg>
-            {{ region.selectedRegion() }}
-          </div>
-        </div>
       </div>
 
       <!-- Shop Details Card -->
@@ -185,6 +178,9 @@ interface Store {
               </svg>
               {{ selectedShop()?.observationCount }} signalement(s) de prix
             </div>
+            <span *ngIf="(selectedShop()?.observationCount || 0) > 5" class="mt-2 inline-flex rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-black text-orange-600">
+              Boutique très signalée
+            </span>
           </div>
         </div>
         
@@ -213,18 +209,39 @@ interface Store {
     .animate-fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
   `]
 })
-export class MapPageComponent implements OnInit {
+export class MapPageComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('mapElement', { static: true }) mapElement!: ElementRef<HTMLDivElement>;
+
   selectedShop = signal<Store | null>(null);
   activeFilter = signal<string>('Tous');
-  region = useRegion();
+  selectedNeighborhood = signal<string>('Tous');
+  locationStatus = signal<'loading' | 'success' | 'error'>('loading');
+  currentLocation = signal<{ latitude: number; longitude: number; accuracy: number } | null>(null);
 
   // Boutiques depuis la BDD
   stores = signal<Store[]>([]);
+  neighborhoods = computed(() => Array.from(new Set(
+    this.stores()
+      .map((store) => store.neighborhood?.trim())
+      .filter((neighborhood): neighborhood is string => Boolean(neighborhood))
+  )).sort((first, second) => first.localeCompare(second, 'fr')));
+  filteredStores = computed(() => {
+    const neighborhood = this.selectedNeighborhood();
+    return neighborhood === 'Tous'
+      ? this.stores()
+      : this.stores().filter((store) => store.neighborhood?.trim() === neighborhood);
+  });
   loadingStores = signal<boolean>(true);
 
   // Point de rassemblement depuis la BDD
   gatheringPoint = signal<GatheringPoint | null>(null);
   loadingGathering = signal<boolean>(true);
+  private map!: L.Map;
+  private locationMarker?: L.Marker;
+  private locationAccuracyCircle?: L.Circle;
+  private storeMarkers = new Map<string, L.CircleMarker>();
+  private gatheringMarker?: L.CircleMarker;
+  private locationWatchId: number | null = null;
 
   constructor(
     private router: Router,
@@ -235,7 +252,23 @@ export class MapPageComponent implements OnInit {
   ngOnInit() {
     this.loadStores();
     this.loadGatheringPoint();
-    this.pushService.requestSubscription();
+  }
+
+  ngAfterViewInit() {
+    this.map = L.map(this.mapElement.nativeElement, { zoomControl: false }).setView([14.7167, -17.4677], 12);
+    L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(this.map);
+    this.renderStoreMarkers();
+    this.renderGatheringMarker();
+    this.requestLocation();
+  }
+
+  ngOnDestroy() {
+    if (this.locationWatchId !== null) navigator.geolocation.clearWatch(this.locationWatchId);
+    this.map?.remove();
   }
 
   /** Charge les boutiques actives depuis l'API */
@@ -246,6 +279,7 @@ export class MapPageComponent implements OnInit {
         next: (res) => {
           this.stores.set(res.data || []);
           this.loadingStores.set(false);
+          this.renderStoreMarkers();
         },
         error: () => this.loadingStores.set(false)
       });
@@ -259,23 +293,103 @@ export class MapPageComponent implements OnInit {
         next: (res) => {
           this.gatheringPoint.set(res.data);
           this.loadingGathering.set(false);
+          this.renderGatheringMarker();
         },
         error: () => this.loadingGathering.set(false)
       });
   }
 
-  /**
-   * Positionne les pins sur la carte de manière distribuée
-   * Dans une vraie implémentation Leaflet, on utiliserait les vraies coordonnées GPS
-   */
-  getPinTop(index: number): number {
-    const positions = [30, 22, 45, 38, 55, 28, 60, 35];
-    return positions[index % positions.length];
+  private renderStoreMarkers() {
+    if (!this.map) return;
+    this.storeMarkers.forEach((marker) => marker.remove());
+    this.storeMarkers.clear();
+    for (const store of this.filteredStores()) {
+      if (!Number.isFinite(Number(store.latitude)) || !Number.isFinite(Number(store.longitude))) continue;
+      const hasManyReports = store.observationCount > 5;
+      const marker = L.circleMarker([Number(store.latitude), Number(store.longitude)], {
+        radius: hasManyReports ? 13 : 9,
+        color: '#ffffff',
+        weight: 3,
+        fillColor: hasManyReports ? '#f97316' : '#00a859',
+        fillOpacity: 1,
+      }).addTo(this.map);
+      marker.bindTooltip(`${store.name} - ${store.observationCount} signalement(s)`, { direction: 'top', offset: [0, -8] });
+      marker.on('click', () => this.selectShop(store));
+      this.storeMarkers.set(store.id, marker);
+    }
   }
 
-  getPinLeft(index: number): number {
-    const positions = [22, 65, 18, 75, 40, 85, 55, 30];
-    return positions[index % positions.length];
+  private renderGatheringMarker() {
+    if (!this.map || !this.gatheringPoint()) return;
+    this.gatheringMarker?.remove();
+    const point = this.gatheringPoint()!;
+    this.gatheringMarker = L.circleMarker([Number(point.latitude), Number(point.longitude)], {
+      radius: 10,
+      color: '#ffffff',
+      weight: 3,
+      fillColor: '#ef4444',
+      fillOpacity: 1,
+    }).addTo(this.map);
+    this.gatheringMarker.bindTooltip(point.label, { direction: 'top', offset: [0, -8] });
+  }
+
+  requestLocation() {
+    if (!navigator.geolocation) {
+      this.locationStatus.set('error');
+      return;
+    }
+    this.locationStatus.set('loading');
+    navigator.geolocation.getCurrentPosition(
+      (position) => this.updateCurrentLocation(position),
+      () => this.locationStatus.set('error'),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+    if (this.locationWatchId === null) {
+      this.locationWatchId = navigator.geolocation.watchPosition(
+        (position) => this.updateCurrentLocation(position),
+        () => undefined,
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+      );
+    }
+  }
+
+  private updateCurrentLocation(position: GeolocationPosition) {
+    const current = {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      accuracy: position.coords.accuracy,
+    };
+    this.currentLocation.set(current);
+    this.locationStatus.set('success');
+    if (!this.map) return;
+    this.locationMarker?.remove();
+    this.locationAccuracyCircle?.remove();
+    this.locationAccuracyCircle = L.circle([current.latitude, current.longitude], {
+      radius: current.accuracy,
+      color: '#2f80ed',
+      weight: 1,
+      fillColor: '#2f80ed',
+      fillOpacity: 0.12,
+    }).addTo(this.map);
+    this.locationMarker = L.marker([current.latitude, current.longitude], {
+      icon: L.divIcon({
+        className: 'current-person-marker',
+        html: `
+          <div style="width:42px;height:50px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.3));">
+            <svg viewBox="0 0 42 50" width="42" height="50" xmlns="http://www.w3.org/2000/svg" aria-label="Ma position">
+              <path d="M21 1C10 1 2 9 2 20c0 13 19 28 19 28s19-15 19-28C40 9 32 1 21 1Z" fill="#2f80ed" stroke="#fff" stroke-width="3"/>
+              <circle cx="21" cy="17" r="6" fill="#fff"/>
+              <path d="M11 34c1-7 5-10 10-10s9 3 10 10" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </div>
+        `,
+        iconSize: [42, 50],
+        iconAnchor: [21, 50],
+      }),
+      zIndexOffset: 1000,
+    }).addTo(this.map);
+    this.locationMarker.bindTooltip(`Ma position (${Math.round(current.accuracy)} m)`, { direction: 'top', offset: [0, -8] });
+    this.map.setView([current.latitude, current.longitude], Math.max(this.map.getZoom(), 14));
   }
 
   triggerGathering() {
@@ -307,16 +421,9 @@ export class MapPageComponent implements OnInit {
 
   openMapNavigation(lat: number, lng: number, label: string = 'Lieu du Rassemblement') {
     const encodedLabel = encodeURIComponent(label);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isAndroid = /Android/.test(navigator.userAgent);
-    let url: string;
-    if (isIOS) {
-      url = `maps://maps.apple.com/?daddr=${lat},${lng}&q=${encodedLabel}&dirflg=d`;
-    } else if (isAndroid) {
-      url = `geo:${lat},${lng}?q=${lat},${lng}(${encodedLabel})`;
-    } else {
-      url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
-    }
+    const origin = this.currentLocation();
+    const originParam = origin ? `&origin=${origin.latitude},${origin.longitude}` : '';
+    const url = `https://www.google.com/maps/dir/?api=1${originParam}&destination=${lat},${lng}&destination_place_id=&travelmode=walking&query=${encodedLabel}`;
     window.open(url, '_blank');
   }
 
@@ -329,6 +436,11 @@ export class MapPageComponent implements OnInit {
   }
 
   setFilter(filter: string) { this.activeFilter.set(filter); }
+  setNeighborhood(neighborhood: string) {
+    this.selectedNeighborhood.set(neighborhood);
+    this.renderStoreMarkers();
+    this.selectedShop.set(null);
+  }
   selectShop(store: Store) { this.selectedShop.set(store); }
   closeCard() { this.selectedShop.set(null); }
 

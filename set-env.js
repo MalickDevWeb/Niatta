@@ -14,6 +14,12 @@ const targetProdPath = path.join(__dirname, 'src', 'environments', 'environment.
 
 const apiUrl = process.env.API_URL || 'http://localhost:3000/api';
 
+const envDevConfigFile = `export const environment = {
+  production: false,
+  apiUrl: \`http://\${window.location.hostname}:3000/api\`
+};
+`;
+
 const envConfigFile = `export const environment = {
   production: ${process.env.NODE_ENV === 'production' ? 'true' : 'false'},
   apiUrl: '${apiUrl}'
@@ -22,7 +28,7 @@ const envConfigFile = `export const environment = {
 
 console.log('Generating environment.ts with API_URL:', apiUrl);
 
-fs.writeFileSync(targetPath, envConfigFile);
+fs.writeFileSync(targetPath, envDevConfigFile);
 fs.writeFileSync(targetProdPath, envConfigFile);
 
 console.log('environment.ts generated successfully');

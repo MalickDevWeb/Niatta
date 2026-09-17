@@ -1,10 +1,12 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PwaInstallService {
   private deferredPrompt: any = null;
+  private authService = inject(AuthService);
   
   // Signaux pour contrôler l'affichage des popups
   public showInstallPrompt = signal<boolean>(false);
@@ -22,10 +24,13 @@ export class PwaInstallService {
 
     if (isIosDevice && !isStandalone) {
       this.isIOS.set(true);
-      // Afficher le popup iOS si l'utilisateur n'a pas déjà refusé (on pourrait utiliser le localStorage)
       const hasDismissed = localStorage.getItem('pwa-ios-dismissed');
       if (!hasDismissed) {
-        setTimeout(() => this.showInstallPrompt.set(true), 3000); // Délai avant affichage
+        setTimeout(() => {
+          if (window.location.pathname.includes('homme-terrain')) {
+            this.showInstallPrompt.set(true);
+          }
+        }, 3000); // Délai avant affichage
       }
     }
 
@@ -38,7 +43,9 @@ export class PwaInstallService {
       
       const hasDismissed = localStorage.getItem('pwa-android-dismissed');
       if (!hasDismissed) {
-        this.showInstallPrompt.set(true);
+        if (window.location.pathname.includes('homme-terrain')) {
+          this.showInstallPrompt.set(true);
+        }
       }
     });
 

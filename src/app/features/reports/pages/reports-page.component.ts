@@ -331,6 +331,7 @@ export class ReportsPageComponent {
 
   latitude = signal<number | null>(null);
   longitude = signal<number | null>(null);
+  capturedLocation = signal<{ latitude: number; longitude: number; accuracy: number; capturedAt: number } | null>(null);
   locationStatus = signal<'pending' | 'loading' | 'success' | 'error'>('pending');
   
   nearbyStores = signal<any[]>([]);
@@ -381,12 +382,18 @@ export class ReportsPageComponent {
     const pName = this.route.snapshot.queryParamMap.get('productName');
     const fId = this.route.snapshot.queryParamMap.get('formatId');
     const fName = this.route.snapshot.queryParamMap.get('formatName');
+    const storeId = this.route.snapshot.queryParamMap.get('storeId');
     
     if (pId && pName) {
       this.selectedProduct.set(pId);
       this.selectedProductName.set(fName ? `${pName} (${fName})` : pName);
       if (fId) this.selectedFormatId.set(fId);
       this.isPreselected.set(true);
+    }
+
+    if (storeId) {
+      this.selectedStoreId.set(storeId);
+      this.hasDisambiguated.set(true);
     }
   }
 
@@ -474,9 +481,27 @@ export class ReportsPageComponent {
     this.voiceService.isListening() ? this.voiceService.stopListening() : this.voiceService.startListening();
   }
 
-  onImageCaptured(base64: string) {
-    this.cameraService.addImage(base64);
+  onImageCaptured(capture: { image: string; capturedAt: number }) {
+    this.cameraService.addImage(capture.image);
     this.isCameraActive.set(false);
+    this.locationStatus.set('loading');
+
+    navigator.geolocation?.getCurrentPosition(
+      (position) => {
+        const capturedLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          capturedAt: capture.capturedAt,
+        };
+        this.capturedLocation.set(capturedLocation);
+        this.latitude.set(capturedLocation.latitude);
+        this.longitude.set(capturedLocation.longitude);
+        this.locationStatus.set(capturedLocation.accuracy <= 30 ? 'success' : 'error');
+      },
+      () => this.locationStatus.set('error'),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
   }
 
   removeImage(index: number) {
@@ -553,6 +578,17 @@ export class ReportsPageComponent {
         },
         buttonsStyling: false,
         backdrop: 'rgba(0,0,0,0.6)'
+      });
+      return;
+    }
+
+    const captureLocation = this.capturedLocation();
+    if (!captureLocation || captureLocation.accuracy > 30) {
+      Swal.fire({
+        title: 'Position trop imprécise',
+        text: 'La photo doit être associée à une position GPS précise. Reprenez la photo lorsque la précision est inférieure à 30 mètres.',
+        icon: 'warning',
+        confirmButtonText: 'Réessayer',
       });
       return;
     }
@@ -725,6 +761,12 @@ export class ReportsPageComponent {
 
   private sendToApi(currentPrice: number) {
     this.isSubmitting.set(true);
+    const captureLocation = this.capturedLocation();
+
+    if (!captureLocation) {
+      this.isSubmitting.set(false);
+      return;
+    }
     
     const payload = {
       productId: this.selectedProduct(),
@@ -734,8 +776,8 @@ export class ReportsPageComponent {
       city: 'Dakar',
       neighborhood: 'Plateau',
       storeName: 'Boutique (Signalement Mobile)',
-      latitude: this.latitude(),
-      longitude: this.longitude(),
+      latitude: captureLocation.latitude,
+      longitude: captureLocation.longitude,
       photoUrls: this.cameraService.capturedImages()
     };
 

@@ -62,7 +62,7 @@ export class LiveCameraComponent implements OnInit, OnDestroy {
   @ViewChild('videoElement', { static: true }) videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement', { static: true }) canvasElement!: ElementRef<HTMLCanvasElement>;
   
-  @Output() imageCaptured = new EventEmitter<string>();
+  @Output() imageCaptured = new EventEmitter<{ image: string; capturedAt: number }>();
   
   error: string | null = null;
   private stream: MediaStream | null = null;
@@ -91,7 +91,7 @@ export class LiveCameraComponent implements OnInit, OnDestroy {
     if (context) {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const base64Image = canvas.toDataURL('image/jpeg', 0.8);
-      this.imageCaptured.emit(base64Image);
+      this.imageCaptured.emit({ image: base64Image, capturedAt: Date.now() });
     }
   }
 

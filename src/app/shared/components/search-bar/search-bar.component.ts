@@ -7,16 +7,16 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="flex flex-col gap-1">
-      <div class="relative w-full h-[60px] rounded-[24px] bg-white border-[3px] flex items-center px-2 shadow-[0_8px_20px_-6px_rgba(0,168,89,0.25)]"
+    <div class="flex min-w-0 w-full flex-col gap-1">
+      <div class="relative flex min-w-0 w-full max-w-full h-[60px] items-center rounded-[24px] bg-white border-[3px] px-2 shadow-[0_8px_20px_-6px_rgba(0,168,89,0.25)]"
            [ngClass]="isOfflineMode ? 'border-orange-400' : 'border-[#00a859]'">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" 
-             class="w-6 h-6 ml-2 flex-shrink-0"
+             class="w-6 h-6 ml-1 sm:ml-2 flex-shrink-0"
              [ngClass]="isOfflineMode ? 'text-orange-400' : 'text-[#00a859]'">
           <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
         </svg>
         <input 
-          class="w-full h-full bg-transparent outline-none text-[16px] font-black text-gray-900 placeholder-gray-400 px-3" 
+          class="min-w-0 flex-1 w-full h-full bg-transparent outline-none text-[16px] font-black text-gray-900 placeholder-gray-400 px-2 sm:px-3" 
           type="text" 
           [placeholder]="isOfflineMode ? 'Recherche hors-ligne...' : placeholder"
           [(ngModel)]="inputValue"
@@ -32,7 +32,7 @@ import { FormsModule } from '@angular/forms';
             'bg-[#00a859] active:scale-95': !isListening && !isOfflineMode && !voskLoading,
             'bg-gray-300 cursor-wait': voskLoading
           }"
-          class="w-[44px] h-[44px] rounded-full text-white flex items-center justify-center flex-shrink-0 shadow-md transition-all">
+          class="w-[44px] h-[44px] min-w-[44px] rounded-full text-white flex items-center justify-center flex-shrink-0 shadow-md transition-all">
           
           <!-- Loading Spinner (Vosk model loading) -->
           <div *ngIf="voskLoading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

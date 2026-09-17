@@ -11,6 +11,12 @@ import { ComparePageComponent } from './features/compare/pages/compare-page.comp
 import { ProductDetailPageComponent } from './features/product/pages/product-detail-page.component';
 import { ShopDetailPageComponent } from './features/shop/pages/shop-detail-page.component';
 
+
+// Field Agent (homme_terrain)
+import { TasksListComponent } from './features/field-agent/tasks-list.component';
+import { TaskDetailComponent } from './features/field-agent/task-detail.component';
+import { FieldAgentLoginPageComponent } from './features/auth/pages/field-agent-login-page.component';
+
 export const routes: Routes = [
   { path: '', component: SplashPageComponent },
   { path: 'auth/login', component: LoginPageComponent },
@@ -23,5 +29,13 @@ export const routes: Routes = [
   { path: 'profile', component: ProfilePageComponent },
   { path: 'product/:id', component: ProductDetailPageComponent },
   { path: 'shop/:id', component: ShopDetailPageComponent },
+  
+  // Admin routes (Moved to Next.js Back-Office)
+  
+  // Field Agent routes
+  { path: 'homme-terrain/login', component: FieldAgentLoginPageComponent },
+  { path: 'homme-terrain', component: TasksListComponent },
+  { path: 'homme-terrain/:id', component: TaskDetailComponent },
+  
   { path: '**', redirectTo: '' }
 ];

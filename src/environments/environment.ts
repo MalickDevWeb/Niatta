@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://niatta-backend.vercel.app/api'
+  apiUrl: `http://${window.location.hostname}:3000/api`
 };

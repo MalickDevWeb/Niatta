@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
@@ -21,5 +21,9 @@ export class ApiService {
 
   post<T>(path: string, body: unknown): Observable<ApiResponse<T>> {
     return this.http.post<ApiResponse<T>>(`${this.baseUrl}${path}`, body);
+  }
+
+  put<T>(path: string, body: unknown): Observable<ApiResponse<T>> {
+    return this.http.put<ApiResponse<T>>(`${this.baseUrl}${path}`, body);
   }
 }

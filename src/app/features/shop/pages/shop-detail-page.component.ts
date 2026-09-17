@@ -1,15 +1,40 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ApiService } from '../../../core/services/api.service';
+
+interface StorePrice {
+  id: string;
+  price: number;
+  observedAt: string;
+  product: { id: string; name: string; icon: string | null };
+  format: { id: string; label: string; officialPriceCap: number | null };
+}
+
+interface StoreDetail {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  city: string | null;
+  neighborhood: string | null;
+  address: string | null;
+  rating: number | null;
+  imageUrl: string | null;
+  photos: string[];
+  observationCount: number;
+  prices: StorePrice[];
+}
 
 @Component({
   selector: 'app-shop-detail-page',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="min-h-screen bg-gray-50 pb-24 font-sans animate-fade-in">
+    <div class="min-h-screen bg-gray-50 pb-24 font-sans animate-fade-in" *ngIf="store() as selectedStore">
       <!-- Header Image & Back Button -->
       <div class="relative h-64 w-full">
-        <img src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=800&q=80" alt="Supermarché" class="w-full h-full object-cover" />
+        <img [src]="selectedStore.imageUrl || 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=800&q=80'" [alt]="selectedStore.name" class="w-full h-full object-cover" />
         <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
         
         <button (click)="goBack()" class="absolute top-10 left-4 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white z-10 hover:bg-white/40 transition-colors">
@@ -21,32 +46,32 @@ import { CommonModule, Location } from '@angular/common';
         <!-- Shop Title overlay -->
         <div class="absolute bottom-6 left-5 right-5 text-white">
           <div class="flex items-center gap-2 mb-1">
-            <span class="bg-[#00a859] text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wider">Supermarché</span>
-            <div class="flex items-center bg-black/40 backdrop-blur-md px-2 py-1 rounded-full">
+            <span class="bg-[#00a859] text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wider">{{ selectedStore.neighborhood || 'Point de vente' }}</span>
+            <div *ngIf="selectedStore.rating !== null" class="flex items-center bg-black/40 backdrop-blur-md px-2 py-1 rounded-full">
               <span class="text-[#fcc917] text-[12px]">⭐</span>
-              <span class="text-white font-bold text-[12px] ml-1">4.3</span>
+              <span class="text-white font-bold text-[12px] ml-1">{{ selectedStore.rating }}</span>
             </div>
           </div>
-          <h1 class="text-[28px] font-black leading-tight drop-shadow-md">Supermarché ABC</h1>
+          <h1 class="text-[28px] font-black leading-tight drop-shadow-md">{{ selectedStore.name }}</h1>
           <p class="text-[14px] text-gray-200 font-medium flex items-center gap-1 mt-1">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
               <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
             </svg>
-            Rue 12, HLM • À 1,2 km
+            {{ selectedStore.address || selectedStore.city || 'Adresse non renseignée' }}<span *ngIf="distanceKm() !== null"> • À {{ distanceKm() }} km</span>
           </p>
         </div>
       </div>
 
       <!-- Action Buttons -->
       <div class="px-5 mt-6 grid grid-cols-2 gap-3">
-        <button class="bg-white border-2 border-gray-100 rounded-2xl p-3 flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95 transition-transform text-[#00a859]">
+        <button (click)="openDirections()" class="bg-white border-2 border-gray-100 rounded-2xl p-3 flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95 transition-transform text-[#00a859]">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
           </svg>
           <span class="font-bold text-[12px] text-gray-700">Itinéraire</span>
         </button>
-        <button class="bg-white border-2 border-gray-100 rounded-2xl p-3 flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95 transition-transform text-[#00a859]">
+        <button (click)="reportStore()" class="bg-white border-2 border-gray-100 rounded-2xl p-3 flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95 transition-transform text-[#00a859]">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
@@ -66,8 +91,8 @@ import { CommonModule, Location } from '@angular/common';
               </svg>
             </div>
             <div>
-              <p class="font-bold text-[14px] text-gray-900">Ouvert actuellement</p>
-              <p class="text-[12px] text-gray-500">Ferme à 22:00</p>
+              <p class="font-bold text-[14px] text-gray-900">Boutique active</p>
+              <p class="text-[12px] text-gray-500">{{ selectedStore.observationCount }} signalement(s) enregistré(s)</p>
             </div>
           </div>
 
@@ -78,8 +103,8 @@ import { CommonModule, Location } from '@angular/common';
               </svg>
             </div>
             <div>
-              <p class="font-bold text-[14px] text-gray-900">+221 33 800 00 00</p>
-              <p class="text-[12px] text-gray-500">Contact boutique</p>
+              <p class="font-bold text-[14px] text-gray-900">{{ selectedStore.city || 'Localisation GPS disponible' }}</p>
+              <p class="text-[12px] text-gray-500">{{ selectedStore.latitude }}, {{ selectedStore.longitude }}</p>
             </div>
           </div>
         </div>
@@ -90,71 +115,103 @@ import { CommonModule, Location } from '@angular/common';
         <h3 class="font-black text-[18px] text-gray-900 mb-4 tracking-tight">Prix relevés dans ce magasin</h3>
         
         <div class="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
-          
-          <!-- Item 1 -->
-          <div class="p-4 border-b border-gray-50 flex items-center justify-between">
+          <div *ngFor="let price of selectedStore.prices; let last = last" class="p-4 flex items-center justify-between" [class.border-b]="!last" [class.border-gray-50]="!last">
             <div class="flex items-center gap-3">
               <div class="w-[50px] h-[50px] bg-gray-50 rounded-2xl flex items-center justify-center text-[28px]">
-                🍚
+                <img *ngIf="price.product.icon" [src]="price.product.icon" [alt]="price.product.name" class="h-10 w-10 object-contain">
+                <span *ngIf="!price.product.icon">🛒</span>
               </div>
               <div>
-                <p class="font-bold text-[15px] text-gray-900">Riz brisé (1kg)</p>
+                <p class="font-bold text-[15px] text-gray-900">{{ price.product.name }} ({{ price.format.label }})</p>
                 <div class="flex items-center gap-1 mt-0.5">
-                  <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                  <span class="text-[11px] font-bold text-green-600">Conforme</span>
+                  <span class="w-2 h-2 rounded-full" [class.bg-green-500]="price.format.officialPriceCap === null || price.price <= price.format.officialPriceCap" [class.bg-red-500]="price.format.officialPriceCap !== null && price.price > price.format.officialPriceCap"></span>
+                  <span class="text-[11px] font-bold" [class.text-green-600]="price.format.officialPriceCap === null || price.price <= price.format.officialPriceCap" [class.text-red-600]="price.format.officialPriceCap !== null && price.price > price.format.officialPriceCap">
+                    {{ price.format.officialPriceCap !== null && price.price > price.format.officialPriceCap ? 'Abusif' : 'Conforme' }}
+                    <span *ngIf="price.format.officialPriceCap !== null && price.price > price.format.officialPriceCap">(Plafond {{ price.format.officialPriceCap }})</span>
+                  </span>
                 </div>
               </div>
             </div>
             <div class="text-right">
-              <p class="font-black text-[16px] text-gray-900">600 FCFA</p>
+              <p class="font-black text-[16px]" [class.text-red-600]="price.format.officialPriceCap !== null && price.price > price.format.officialPriceCap" [class.text-gray-900]="price.format.officialPriceCap === null || price.price <= price.format.officialPriceCap">{{ price.price }} FCFA</p>
+              <p class="text-[10px] text-gray-400">{{ price.observedAt | date:'shortDate' }}</p>
             </div>
           </div>
-
-          <!-- Item 2 -->
-          <div class="p-4 border-b border-gray-50 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-[50px] h-[50px] bg-gray-50 rounded-2xl flex items-center justify-center text-[28px]">
-                🛢️
-              </div>
-              <div>
-                <p class="font-bold text-[15px] text-gray-900">Huile végétale (1L)</p>
-                <div class="flex items-center gap-1 mt-0.5">
-                  <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                  <span class="text-[11px] font-bold text-red-600">Abusif (Plafond 1000)</span>
-                </div>
-              </div>
-            </div>
-            <div class="text-right">
-              <p class="font-black text-[16px] text-red-600">1150 FCFA</p>
-            </div>
-          </div>
-
-          <!-- Item 3 -->
-          <div class="p-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-[50px] h-[50px] bg-gray-50 rounded-2xl flex items-center justify-center text-[28px]">
-                🧊
-              </div>
-              <div>
-                <p class="font-bold text-[15px] text-gray-900">Sucre (1kg)</p>
-                <div class="flex items-center gap-1 mt-0.5">
-                  <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                  <span class="text-[11px] font-bold text-green-600">Conforme</span>
-                </div>
-              </div>
-            </div>
-            <div class="text-right">
-              <p class="font-black text-[16px] text-gray-900">600 FCFA</p>
-            </div>
-          </div>
-
+          <p *ngIf="selectedStore.prices.length === 0" class="p-6 text-center text-sm font-medium text-gray-500">Aucun prix confirmé pour cette boutique.</p>
         </div>
       </div>
+    </div>
+    <div *ngIf="loading()" class="min-h-screen flex items-center justify-center text-sm font-bold text-gray-500">Chargement de la boutique...</div>
+    <div *ngIf="!loading() && error()" class="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
+      <p class="font-bold text-red-600">{{ error() }}</p>
+      <button (click)="goBack()" class="rounded-xl bg-[#00a859] px-5 py-3 font-bold text-white">Retour</button>
     </div>
   `
 })
 export class ShopDetailPageComponent {
-  constructor(private location: Location) {}
+  store = signal<StoreDetail | null>(null);
+  loading = signal(true);
+  error = signal<string | null>(null);
+  distanceKm = signal<number | null>(null);
+  private currentLocation = signal<{ latitude: number; longitude: number } | null>(null);
+
+  constructor(
+    private location: Location,
+    private route: ActivatedRoute,
+    private router: Router,
+    private apiService: ApiService
+  ) {}
+
+  ngOnInit() {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) {
+      this.error.set('Identifiant de boutique invalide.');
+      this.loading.set(false);
+      return;
+    }
+    this.apiService.get<StoreDetail>(`/stores/${id}`).subscribe({
+      next: (response) => {
+        this.store.set(response.data);
+        this.loading.set(false);
+        this.requestDistance();
+      },
+      error: () => {
+        this.error.set('Impossible de charger cette boutique.');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  requestDistance() {
+    const selectedStore = this.store();
+    if (!selectedStore || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition((position) => {
+      const current = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+      this.currentLocation.set(current);
+      this.distanceKm.set(this.calculateDistanceKm(current.latitude, current.longitude, selectedStore.latitude, selectedStore.longitude));
+    }, () => undefined, { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 });
+  }
+
+  private calculateDistanceKm(latitude1: number, longitude1: number, latitude2: number, longitude2: number) {
+    const earthRadiusKm = 6371;
+    const latitudeDelta = (latitude2 - latitude1) * Math.PI / 180;
+    const longitudeDelta = (longitude2 - longitude1) * Math.PI / 180;
+    const a = Math.sin(latitudeDelta / 2) ** 2 + Math.cos(latitude1 * Math.PI / 180) * Math.cos(latitude2 * Math.PI / 180) * Math.sin(longitudeDelta / 2) ** 2;
+    return Math.round(earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
+  }
+
+  openDirections() {
+    const selectedStore = this.store();
+    if (!selectedStore) return;
+    const origin = this.currentLocation();
+    const originParam = origin ? `&origin=${origin.latitude},${origin.longitude}` : '';
+    window.open(`https://www.google.com/maps/dir/?api=1${originParam}&destination=${selectedStore.latitude},${selectedStore.longitude}&travelmode=walking`, '_blank');
+  }
+
+  reportStore() {
+    const selectedStore = this.store();
+    if (selectedStore) this.router.navigate(['/reports'], { queryParams: { storeId: selectedStore.id, storeName: selectedStore.name } });
+  }
   
   goBack() {
     this.location.back();
